@@ -5,26 +5,25 @@ import os
 from mne.io import read_raw_fif
 import numpy as np
 from autoreject import AutoReject
+from hytools.vtc_utils import get_VTC_from_file
 
 
 
-folderpath = '/storage/Yann/saflow_DATA/'
-PREPROC_PATH = folderpath + 'saflow_preproc/'
+FOLDERPATH = '/storage/Yann/saflow_DATA/'
+PREPROC_PATH = FOLDERPATH + 'saflow_preproc/'
+EPOCHS_DIR = FOLDERPATH + 'saflow_epoched/'
 LOGS_DIR = "/home/karim/pCloudDrive/science/saflow/gradCPT/gradCPT_share_Mac_PC/gradCPT_share_Mac_PC/saflow_data/"
-IMG_DIR = '/home/karim/pCloudDrive/science/saflow/images/'
-EPOCHS_DIR = folderpath + 'saflow_epoched/'
-PSDS_DIR = folderpath + 'saflow_PSD/'
 
-FREQS = [ [4, 8], [8, 12], [12, 20], [20, 30], [30, 60], [60, 90], [90, 120] ]
-FREQS_NAMES = ['theta', 'alpha', 'lobeta', 'hibeta', 'gamma1', 'gamma2', 'gamma3']
 
-subj_list = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
-blocs_list = ['1','2','3', '4', '5', '6']
+#SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
+SUBJ_LIST = ['14']
+#BLOCS_LIST = ['5', '6']
+BLOCS_LIST = ['1','2','3', '4', '5', '6']
 
 
 if __name__ == "__main__":
-    for subj in subj_list:
-        for bloc in blocs_list:
+    for subj in SUBJ_LIST:
+        for bloc in BLOCS_LIST:
             ### Find logfile to extract VTC
             log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
             VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=None, hibound=None)
@@ -34,7 +33,6 @@ if __name__ == "__main__":
             picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
 
             ### Set some constants for epoching
-
             baseline = (None, 0.0)
             reject = {'mag': 4e-12}
             tmin, tmax = 0, 0.8

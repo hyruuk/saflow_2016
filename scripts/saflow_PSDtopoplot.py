@@ -3,6 +3,7 @@ from scipy.io import loadmat
 import mne
 from hytools.meg_utils import get_ch_pos
 import numpy as np
+from mlneurotools.stats import relative_perm, ttest_perm
 
 
 
@@ -17,6 +18,10 @@ SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
 #BLOCS_LIST = ['5', '6']
 BLOCS_LIST = ['1','2','3', '4', '5', '6']
 
+
+
+alpha = 0.05
+
     
 ### OPEN PSDS AND CREATE TOPOPLOTS
 
@@ -26,6 +31,8 @@ if __name__ == "__main__":
     raw = mne.io.read_raw_ctf(ch_file)
     ch_xy = get_ch_pos(raw)
     toplot = []
+    toplot_pval = []
+    toplot_masks = []
     for i, freq_name in enumerate(FREQS_NAMES):
         alldata = []
         for zone in ['IN', 'OUT']:
@@ -43,6 +50,21 @@ if __name__ == "__main__":
                 zonedata.append(subjdata)
             alldata.append(np.asarray(zonedata))
         alldata = np.asarray(alldata)
-        alldata = np.mean(alldata, axis=1) # average subjects
-        toplot.append((alldata[0] - alldata[1])/alldata[1]) ### IN - OUT / OUT
-    array_topoplot(toplot, ch_xy, showtitle=True, titles=FREQS_NAMES, savefig=True, figpath=IMG_DIR + 'IN_vs_OUT_PSD_autoreject.png', vmin=np.min(np.min(toplot)), vmax=np.max(np.max(toplot)))
+        tvals, pvals = ttest_perm(np.asarray(alldata[0]), np.asarray(alldata[1]), n_perm=1001, two_tailed=False, correction=None, paired=True, n_jobs=4)
+        mask = pvals < alpha
+        print(np.min(pvals))
+        alldata_avg = np.mean(alldata, axis=1) # average subjects
+        toplot.append((alldata_avg[0] - alldata_avg[1])/alldata_avg[1]) ### IN - OUT / OUT
+        toplot_pval.append(pvals)
+        toplot_masks.append(mask)
+
+
+
+
+    toplot = [i * 100 for i in toplot]
+    vmax = np.max(np.max(abs(np.asarray(toplot))))
+    vmin = - vmax
+    array_topoplot(toplot, ch_xy, showtitle=True, titles=FREQS_NAMES, savefig=True, figpath=IMG_DIR + 'INvsOUT_PSD_autoreject_05uncorr.png', vmin=vmin, vmax=vmax, cmap='seismic', with_mask=True, masks=toplot_masks)
+
+    #### multiplier valeurs par 100
+    #### gérer la colorbar

@@ -6,16 +6,16 @@ from scipy.io import savemat
 
 
 FOLDERPATH = '/storage/Yann/saflow_DATA/'
-EPOCHS_DIR = FOLDERPATH + 'saflow_epoched/'
-PSDS_DIR = FOLDERPATH + 'saflow_PSD/'
+EPOCHS_DIR = FOLDERPATH + 'saflow_epoched_noAR/'
+PSDS_DIR = FOLDERPATH + 'saflow_PSD_noAR/'
 
 FREQS = [ [4, 8], [8, 12], [12, 20], [20, 30], [30, 60], [60, 90], [90, 120] ]
 FREQS_NAMES = ['theta', 'alpha', 'lobeta', 'hibeta', 'gamma1', 'gamma2', 'gamma3']
 
-#SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
-#BLOCS_LIST = ['1','2','3', '4', '5', '6']
-SUBJ_LIST = ['13']
-BLOCS_LIST = ['5', '6']
+SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
+BLOCS_LIST = ['1','2','3', '4', '5', '6']
+#SUBJ_LIST = ['13']
+#BLOCS_LIST = ['5', '6']
 
 
 if __name__ == "__main__":

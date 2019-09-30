@@ -4,7 +4,7 @@ import mne
 import os
 from mne.io import read_raw_fif
 import numpy as np
-from autoreject import AutoReject
+#from autoreject import AutoReject
 from hytools.vtc_utils import get_VTC_from_file
 
 
@@ -60,9 +60,9 @@ if __name__ == "__main__":
                 
 
             ### Autoreject detects, rejects and interpolate artifacted epochs
-            ar = AutoReject()
-            INepochs_clean = ar.fit_transform(INepochs)
-            OUTepochs_clean = ar.fit_transform(OUTepochs)
+            #ar = AutoReject()
+            #INepochs_clean = ar.fit_transform(INepochs)
+            #OUTepochs_clean = ar.fit_transform(OUTepochs)
             
-            INepochs_clean.save(EPOCHS_DIR + 'SA' + subj + '_' + bloc + '_IN_epo.fif.gz')
-            OUTepochs_clean.save(EPOCHS_DIR + 'SA' + subj + '_' + bloc + '_OUT_epo.fif.gz')
+            INepochs.save(EPOCHS_DIR + 'SA' + subj + '_' + bloc + '_IN_epo.fif.gz')
+            OUTepochs.save(EPOCHS_DIR + 'SA' + subj + '_' + bloc + '_OUT_epo.fif.gz')

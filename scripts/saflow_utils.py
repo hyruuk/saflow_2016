@@ -93,11 +93,15 @@ def compute_PSD(epochs, sf, epochs_length, f=None):
     psds = objet_PSD.get(data)[0] # Ici on calcule la PSD !
     return psds
 
-def array_topoplot(toplot, ch_xy, showtitle=False, titles=None, savefig=False, figpath=None, vmin=-1, vmax=1):
+def array_topoplot(toplot, ch_xy, showtitle=False, titles=None, savefig=False, figpath=None, vmin=-1, vmax=1, cmap='magma', with_mask=False, masks=None):
     #create fig
+    mask_params = dict(marker='o', markerfacecolor='w', markeredgecolor='k', linewidth=0, markersize=5)
     fig, ax = plt.subplots(1,len(toplot), figsize=(20,10))
     for i, data in enumerate(toplot):
-        image,_ = mne.viz.plot_topomap(data=data, pos=ch_xy, cmap='magma', vmin=vmin, vmax=vmax, axes=ax[i], show=False)
+        if with_mask == False:
+            image,_ = mne.viz.plot_topomap(data=data, pos=ch_xy, cmap=cmap, vmin=vmin, vmax=vmax, axes=ax[i], show=False, contours=None)
+        elif with_mask == True:
+            image,_ = mne.viz.plot_topomap(data=data, pos=ch_xy, cmap=cmap, vmin=vmin, vmax=vmax, axes=ax[i], show=False, contours=None, mask_params=mask_params, mask=masks[i])
         #option for title
         if showtitle == True:
             ax[i].set_title(titles[i], fontdict={'fontsize': 20, 'fontweight': 'heavy'})

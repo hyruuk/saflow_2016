@@ -1,12 +1,18 @@
 from scipy.io import loadmat, savemat
 import numpy as np
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from mlneurotools.ml import classification
 
 
-SUBJ_LIST = ['04', '05']#, '06', '07', '08', '09', '10', '11', '12', '13']
-BLOCS_LIST = ['1']#,'2','3', '4', '5', '6']
-FREQ = 'alpha'
-CHAN = [0,1,2,3]
-DPATH = '/home/hyruuk/GitHub/saflow/Temp_DATA'
+SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
+BLOCS_LIST = ['1','2','3', '4', '5', '6']
+#FREQ = 'alpha'
+FREQ_BANDS = ['theta','alpha','beta','gamma1','gamma2','gamma3']
+#CHAN = 0
+DPATH = '/storage/Yann/saflow_DATA/saflow_PSD'
+RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'
+
 
 ### ML single subject classification of IN vs OUT epochs
 # - single-features
@@ -41,17 +47,38 @@ def prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN):
 
             i_group += 1
 
-    X = np.concatenate(prepared_data, axis=1).T
+    X = np.concatenate(prepared_data, axis=1)
     y = np.concatenate(prepared_y, axis=0)
     groups = np.concatenate(prepared_groups, axis=0)
 
     if CHAN != None:
-        X = X[:,CHAN]
+        X = X[CHAN,:]
 
+    X = X.reshape(-1,1)
     return X, y, groups
 
-X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
-print(X.shape)
+def combine_features(Xs):
+    X = np.concatenate(Xs, axis=1)
+    return X
+
+def classif_and_save(X,y,groups, FREQ, CHAN):
+    cv = StratifiedShuffleSplit(10)
+    clf = LinearDiscriminantAnalysis()
+    save = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=4)
+    print(save['acc_score'])
+    print(save['acc_pvalue'])
+    savename = 'LDA_{}_{}.mat'.format(FREQ, CHAN)
+    savemat(RESULTS_PATH + '/' + savename, save)
+
+
+
+for FREQ in FREQ_BANDS:
+    for CHAN in range(270):
+        X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
+        print('X shape : {}'.format(X.shape))
+        print('y shape : {}'.format(y.shape))
+        print('groups shape : {}'.format(groups.shape))
+        classif_and_save(X,y,groups, FREQ, CHAN)
 
 
 

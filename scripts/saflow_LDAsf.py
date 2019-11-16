@@ -65,7 +65,7 @@ def combine_features(Xs):
 def classif_and_save(X,y,groups, FREQ, CHAN):
     savepath = '{}/LDA_{}_{}.mat'.format(RESULTS_PATH, FREQ, CHAN)
     if Path(savepath).is_file():
-        print(savepath + 'already exists.')
+        print(savepath + ' already exists.')
         return
 
     cv = StratifiedShuffleSplit(10)
@@ -82,7 +82,7 @@ def classif_and_save(X,y,groups, FREQ, CHAN):
 for FREQ in FREQ_BANDS:
     for CHAN in range(270):
         X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
-        print('Computing chan {} in {} band.')
+        print('Computing chan {} in {} band :'.format(CHAN, FREQ))
         classif_and_save(X,y,groups, FREQ, CHAN)
 
 

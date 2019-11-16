@@ -9,7 +9,7 @@ from pathlib import Path
 SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
 BLOCS_LIST = ['1','2','3', '4', '5', '6']
 #FREQ = 'alpha'
-FREQ_BANDS = ['theta','alpha','beta','gamma1','gamma2','gamma3']
+FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
 #CHAN = 0
 DPATH = '/storage/Yann/saflow_DATA/saflow_PSD'
 RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'

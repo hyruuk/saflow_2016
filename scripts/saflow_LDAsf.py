@@ -64,7 +64,7 @@ def combine_features(Xs):
 
 def classif_and_save(X,y,groups, FREQ, CHAN):
     savepath = '{}/LDA_{}_{}.mat'.format(RESULTS_PATH, FREQ, CHAN)
-    try Path(savepath).is_file():
+    if Path(savepath).is_file():
         print(savepath + 'already exists.')
         return
 

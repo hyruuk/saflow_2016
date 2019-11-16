@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from mlneurotools.ml import classification
+from pathlib import Path
 
 
 SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
@@ -62,22 +63,26 @@ def combine_features(Xs):
     return X
 
 def classif_and_save(X,y,groups, FREQ, CHAN):
+    savepath = '{}/LDA_{}_{}.mat'.format(RESULTS_PATH, FREQ, CHAN)
+    try Path(savepath).is_file():
+        print(savepath + 'already exists.')
+        return
+
     cv = StratifiedShuffleSplit(10)
     clf = LinearDiscriminantAnalysis()
     save = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=4)
-    print(save['acc_score'])
-    print(save['acc_pvalue'])
-    savename = 'LDA_{}_{}.mat'.format(FREQ, CHAN)
-    savemat(RESULTS_PATH + '/' + savename, save)
+
+    print('Done')
+    print('DA : ' + str(save['acc_score']))
+    print('p value : ' + str(save['acc_pvalue']))
+    savemat(savepath, save)
 
 
 
 for FREQ in FREQ_BANDS:
     for CHAN in range(270):
         X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
-        print('X shape : {}'.format(X.shape))
-        print('y shape : {}'.format(y.shape))
-        print('groups shape : {}'.format(groups.shape))
+        print('Computing chan {} in {} band.')
         classif_and_save(X,y,groups, FREQ, CHAN)
 
 

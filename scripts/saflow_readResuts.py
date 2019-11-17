@@ -14,17 +14,17 @@ if __name__ == "__main__":
 	raw.close()
 	all_acc = []
 	all_pval = []
-    for FREQ in FREQ_BANDS:
+	for FREQ in FREQ_BANDS:
     	freq_acc = []
     	freq_pval = []
-        for CHAN in range(270):
-            savepath = '{}/LDA_{}_{}.mat'.format(RESULTS_PATH, FREQ, CHAN)
-            data_acc = loadmat(savepath)['acc_score']
-            data_pval = loadmat(savepath)['acc_pvalue']
-            freq_acc.append(data_acc)
-            freq_pval.append(data_pval)
-        all_acc.append(np.array(freq_acc).squeeze)
-        all_pval.append(np.array(freq_pval).squeeze)
-    print(len(all_acc))
-    print(len(all_pval))
-    array_topoplot(all_acc, ch_xy, showtitle=True, titles=FREQ_BANDS, savefig=False)
+    	for CHAN in range(270):
+        	savepath = '{}/LDA_{}_{}.mat'.format(RESULTS_PATH, FREQ, CHAN)
+        	data_acc = loadmat(savepath)['acc_score']
+        	data_pval = loadmat(savepath)['acc_pvalue']
+        	freq_acc.append(data_acc)
+        	freq_pval.append(data_pval)
+    	all_acc.append(np.array(freq_acc).squeeze)
+    	all_pval.append(np.array(freq_pval).squeeze)
+	print(len(all_acc))
+	print(len(all_pval))
+	array_topoplot(all_acc, ch_xy, showtitle=True, titles=FREQ_BANDS, savefig=False)

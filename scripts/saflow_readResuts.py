@@ -2,6 +2,7 @@ from scipy.io import loadmat
 from hytools.meg_utils import array_topoplot, get_ch_pos
 
 RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'
+FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
 
 if __name__ == "__main__":
     all_acc = []

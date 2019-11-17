@@ -1,5 +1,5 @@
 from scipy.io import loadmat
-from hytools.meg_tools import array_topoplot, get_ch_pos
+from hytools.meg_utils import array_topoplot, get_ch_pos
 
 RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'
 

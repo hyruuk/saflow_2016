@@ -4,13 +4,21 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from mlneurotools.ml import classification
 from pathlib import Path
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-c",
+    "--channel",
+    default=0,
+    type=int,
+    help="Channels to compute",
+)
+args = parser.parse_args()
 
 SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
 BLOCS_LIST = ['1','2','3', '4', '5', '6']
-#FREQ = 'alpha'
 FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
-#CHAN = 0
 DPATH = '/storage/Yann/saflow_DATA/saflow_PSD'
 RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'
 
@@ -67,23 +75,22 @@ def classif_and_save(X,y,groups, FREQ, CHAN):
     if Path(savepath).is_file():
         print(savepath + ' already exists.')
         return
-
     cv = StratifiedShuffleSplit(10)
     clf = LinearDiscriminantAnalysis()
     save = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=4)
-
     print('Done')
     print('DA : ' + str(save['acc_score']))
     print('p value : ' + str(save['acc_pvalue']))
     savemat(savepath, save)
 
 
-
-for FREQ in FREQ_BANDS:
-    for CHAN in range(270):
-        X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
-        print('Computing chan {} in {} band :'.format(CHAN, FREQ))
-        classif_and_save(X,y,groups, FREQ, CHAN)
+if __name__ == "__main__":
+    CHAN = args.channel
+    for FREQ in FREQ_BANDS:
+        for CHAN in range(270):
+            X, y, groups = prepare_data(DPATH, SUBJ_LIST, BLOCS_LIST, FREQ, CHAN)
+            print('Computing chan {} in {} band :'.format(CHAN, FREQ))
+            classif_and_save(X,y,groups, FREQ, CHAN)
 
 
 

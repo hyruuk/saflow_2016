@@ -122,3 +122,24 @@ def create_pval_mask(pvals, alpha=0.05):
         if pval <= alpha:
             mask[i] = True
     return mask
+
+
+def load_PSD_data(SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, PSDS_DIR): # FREQS, ZONE, SUBJ, CHANS x TRIALS
+    PSD_alldata = []
+    for i, freq_name in enumerate(FREQS_NAMES):
+        alldata = []
+        for zone in ['IN', 'OUT']: # 0 = IN, 1 = OUT
+            zonedata = []
+            for subj in SUBJ_LIST:
+                subjdata = []
+                for bloc in BLOCS_LIST:
+                    mat = loadmat(PSDS_DIR + 'SA' + subj + '_' + bloc + '_' + zone + '_' + freq_name + '.mat')
+                    data = mat['PSD']
+                    if subjdata == []:
+                        subjdata = data
+                    else:
+                        subjdata = np.hstack((subjdata, data))
+                zonedata.append(subjdata)
+            alldata.append(zonedata)
+        PSD_alldata.append(alldata)
+    return PSD_alldata

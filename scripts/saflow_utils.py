@@ -115,3 +115,10 @@ def array_topoplot(toplot, ch_xy, showtitle=False, titles=None, savefig=False, f
     if savefig == True:
         plt.savefig(figpath, dpi=300)
     plt.show()
+
+def create_pval_mask(pvals, alpha=0.05):
+    mask = np.zeros((len(pvals),), dtype='bool')
+    for i, pval in enumerate(pvals):
+        if pval <= alpha:
+            mask[i] = True
+    return mask

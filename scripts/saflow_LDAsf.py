@@ -1,10 +1,11 @@
 from scipy.io import loadmat, savemat
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedShuffleSplit, GroupShuffleSplit, ShuffleSplit
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from mlneurotools.ml import classification
+from mlneurotools.ml import classification, StratifiedShuffleGroupSplit
 from pathlib import Path
 import argparse
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -21,6 +22,7 @@ BLOCS_LIST = ['1','2','3', '4', '5', '6']
 FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
 DPATH = '/storage/Yann/saflow_DATA/saflow_PSD'
 RESULTS_PATH = '/storage/Yann/saflow_DATA/LDA_results'
+
 
 
 ### ML single subject classification of IN vs OUT epochs
@@ -75,9 +77,9 @@ def classif_and_save(X,y,groups, FREQ, CHAN):
     if Path(savepath).is_file():
         print(savepath + ' already exists.')
         return
-    cv = StratifiedShuffleSplit(10)
+    cv = ShuffleSplit(test_size=0.1, n_splits=10)
     clf = LinearDiscriminantAnalysis()
-    save = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=4)
+    save = classification(clf, cv, X, y, groups=groups, perm=10, n_jobs=7)
     print('Done')
     print('DA : ' + str(save['acc_score']))
     print('p value : ' + str(save['acc_pvalue']))
@@ -85,6 +87,12 @@ def classif_and_save(X,y,groups, FREQ, CHAN):
 
 
 if __name__ == "__main__":
+    if not os.path.isdir(RESULTS_PATH):
+        os.mkdir(RESULTS_PATH)
+        print('Results folder created at : {}'.format(RESULTS_PATH))
+    else:
+        print('{} already exists.'.format(RESULTS_PATH))
+
     CHAN = args.channel
     for FREQ in FREQ_BANDS:
         for CHAN in range(270):

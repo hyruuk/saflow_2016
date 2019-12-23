@@ -1,58 +1,69 @@
 from saflow_utils import array_topoplot, create_pval_mask, load_PSD_data
+from saflow_params import FOLDERPATH, IMG_DIR, FREQS_NAMES, SUBJ_LIST, BLOCS_LIST, ZONE_CONDS, ZONE2575_CONDS
 from scipy.io import loadmat
 import mne
 from hytools.meg_utils import get_ch_pos
 import numpy as np
 from mlneurotools.stats import ttest_perm
+import matplotlib.pyplot as plt
 
 
 
-FOLDERPATH = '/storage/Yann/saflow_DATA/'
-PSDS_DIR = FOLDERPATH + 'saflow_PSD/'
+FOLDERPATH = '/storage/Yann/saflow_DATA/saflow_bids/'
 IMG_DIR = '/home/karim/pCloudDrive/science/saflow/images/'
 FREQS_NAMES = ['theta', 'alpha', 'lobeta', 'hibeta', 'gamma1', 'gamma2', 'gamma3']
-SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13']
-BLOCS_LIST = ['1','2','3', '4', '5', '6']
+SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15']
+BLOCS_LIST = ['2','3', '4', '5', '6', '7']
 
 
 ### OPEN PSDS AND CREATE TOPOPLOTS
 
 #### ALL SUBJ TOPOPLOT
 if __name__ == "__main__":
+    # get ch x and y coordinates
     ch_file = '/storage/Yann/saflow_DATA/alldata/SA04_SAflow-yharel_20190411_01.ds'
-    raw = mne.io.read_raw_ctf(ch_file)
+    raw = mne.io.read_raw_ctf(ch_file, verbose=False)
     ch_xy = get_ch_pos(raw)
-    PSD_alldata = load_PSD_data(SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, PSDS_DIR)
+    raw.close()
+
+    # load PSD data
+    PSD_alldata = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, ZONE2575_CONDS)
+
+    # average across trials
+    for cond in range(len(PSD_alldata)):
+        for subj in range(len(PSD_alldata[0])):
+            PSD_alldata[cond][subj] = np.mean(PSD_alldata[cond][subj], axis=2)
+    PSD_alldata = np.array(PSD_alldata)
+
+    # compute t_tests
     power_diff = []
     masks = []
     tvalues = []
     pvalues = []
-
-    # get PSDS averaged across trials (1 value per subj per sensor)
     for i, freq in enumerate(FREQS_NAMES):
-        data_IN = []
-        data_OUT = []
-        for subj, _ in enumerate(SUBJ_LIST):
-            dat = PSD_alldata[i][0][subj]
-            data_IN.append(np.mean(dat, axis=1))
-            dat = PSD_alldata[i][1][subj]
-            data_OUT.append(np.mean(dat, axis=1))
+        tvals, pvals = ttest_perm(PSD_alldata[0][i,:,:], PSD_alldata[1][i,:,:], # cond1 = IN, cond2 = OUT
+        n_perm=0,
+        n_jobs=6,
+        correction='maxstat',
+        paired=True,
+        two_tailed=True)
+        tvalues.append(tvals)
+        pvalues.append(pvals)
+        masks.append(create_pval_mask(pvals, alpha=0.05))
 
-        data_IN = np.array(data_IN)
-        data_OUT = np.array(data_OUT)
-        data_IN_avg = np.mean(data_IN, axis=0)
-        data_OUT_avg = np.mean(data_OUT, axis=0)
-        power_diff.append((data_IN_avg - data_OUT_avg)/data_OUT_avg) ### IN - OUT / OUT
-        #tvals, pvals = ttest_perm(alldata[0].T, alldata[1].T, n_perm=1000, n_jobs=6)
-
-
-        #tvalues.append(tvals)
-
-        #pvalues.append(pvals)
-        #print(pvals)
-        #masks.append(create_pval_mask(pvals, alpha=0.1))
-
-    toplot = power_diff
+    # plot
+    toplot = tvalues
     vmax = np.max(np.max(abs(np.asarray(toplot))))
     vmin = -vmax
-    array_topoplot(toplot, ch_xy, showtitle=True, titles=FREQS_NAMES, savefig=False, figpath=IMG_DIR + 'IN_vs_OUT_PSD_autoreject.png', vmin=vmin, vmax=vmax)#, with_mask=True, masks=masks)
+    fig = array_topoplot(toplot,
+                    ch_xy,
+                    showtitle=True,
+                    titles=FREQS_NAMES,
+                    savefig=False,
+                    figpath=IMG_DIR + 'IN25vsOUT75_tvals_12subj_A05_maxstat.png',
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap='coolwarm',
+                    with_mask=True,
+                    masks=masks)
+    plt.close(fig=fig)

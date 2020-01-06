@@ -55,7 +55,7 @@ if __name__ == "__main__":
             tvals, pvals = ttest_perm(PSD_alldata[0][s_idx][i,:,:max_trials].T, PSD_alldata[1][s_idx][i,:,:max_trials].T, # cond1 = IN, cond2 = OUT
             n_perm=1001,
             n_jobs=6,
-            correction=None,
+            correction='maxstat',
             paired=False,
             two_tailed=True)
             tvalues.append(tvals)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
                         showtitle=True,
                         titles=FREQS_NAMES,
                         savefig=True,
-                        figpath=IMG_DIR + 'IN25vsOUT75_tvals_sub-{}_A05_uncorr.png'.format(subj),
+                        figpath=IMG_DIR + 'IN25vsOUT75_tvals_sub-{}_A05_maxstat.png'.format(subj),
                         vmin=vmin,
                         vmax=vmax,
                         cmap='coolwarm',

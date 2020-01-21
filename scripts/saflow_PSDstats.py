@@ -6,18 +6,15 @@ from hytools.meg_utils import get_ch_pos
 import numpy as np
 from mlneurotools.stats import ttest_perm
 import matplotlib.pyplot as plt
+from neuro import split_PSD_data
+from utils import create_pval_mask, array_topoplot
+from saflow_params import FOLDERPATH, IMG_DIR, FREQS_NAMES, SUBJ_LIST, BLOCS_LIST, FEAT_PATH
+import pickle
 
 
-
-FOLDERPATH = '/storage/Yann/saflow_DATA/saflow_bids/'
-IMG_DIR = '/home/karim/pCloudDrive/science/saflow/images/'
-FREQS_NAMES = ['theta', 'alpha', 'lobeta', 'hibeta', 'gamma1', 'gamma2', 'gamma3']
-SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15']
-BLOCS_LIST = ['2','3', '4', '5', '6', '7']
-
+ALPHA = 0.001
 
 ### OPEN PSDS AND CREATE TOPOPLOTS
-
 #### ALL SUBJ TOPOPLOT
 if __name__ == "__main__":
     # get ch x and y coordinates
@@ -27,7 +24,8 @@ if __name__ == "__main__":
     raw.close()
 
     # load PSD data
-    PSD_alldata = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, ZONE2575_CONDS)
+    with open(FEAT_PATH + 'PSD_VTC', 'rb') as fp:
+        PSD_alldata = pickle.load(fp)
 
     # average across trials
     for cond in range(len(PSD_alldata)):
@@ -49,7 +47,7 @@ if __name__ == "__main__":
         two_tailed=True)
         tvalues.append(tvals)
         pvalues.append(pvals)
-        masks.append(create_pval_mask(pvals, alpha=0.05))
+        masks.append(create_pval_mask(pvals, alpha=ALPHA))
 
     # plot
     toplot = tvalues
@@ -59,8 +57,8 @@ if __name__ == "__main__":
                     ch_xy,
                     showtitle=True,
                     titles=FREQS_NAMES,
-                    savefig=False,
-                    figpath=IMG_DIR + 'IN25vsOUT75_tvals_12subj_A05_maxstat.png',
+                    savefig=True,
+                    figpath=IMG_DIR + 'INvsOUT_tvals_12subj_A{}_maxstat.png'.format(str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',

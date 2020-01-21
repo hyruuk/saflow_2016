@@ -3,12 +3,116 @@ import os
 from mne.io import read_raw_fif
 import numpy as np
 import matplotlib.pyplot as plt
-from hytools.vtc_utils import *
 from hytools.meg_utils import get_ch_pos
 from autoreject import AutoReject
 from scipy.io import loadmat, savemat
 from brainpipe import feature
 from saflow_params import FOLDERPATH
+from scipy.io import loadmat, savemat
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+from scipy import signal
+import numpy as np
+
+### VTC computation
+
+def interp_RT(RT):
+    ### Interpolate missing reaction times using the average of proximal values.
+    # Note that this technique behaves poorly when two 0 are following each other
+    for i in range(len(RT)):
+        if RT[i] == 0:
+            try:
+                RT[i] = np.mean((RT[i-1], RT[i+1]))
+            except:
+                RT[i] = RT[i-1]
+    RT_interpolated = RT
+    return RT_interpolated
+
+def compute_VTC(RT_interp, filt=True, filt_order=3, filt_cutoff=0.05):
+    ### Compute the variance time course (VTC) of the array RT_interp
+    VTC = (RT_interp - np.mean(RT_interp))/np.std(RT_interp)
+    if filt == True:
+        b, a = signal.butter(filt_order,filt_cutoff)
+        VTC_filtered = signal.filtfilt(b, a, abs(VTC))
+    VTC = VTC_filtered
+    return VTC
+
+def in_out_zone(VTC, lobound = None, hibound = None):
+    ### Collects the indices of IN/OUT zone trials
+    # lobound and hibound are values between 0 and 1 representing quantiles
+    INzone = []
+    OUTzone = []
+    if lobound == None and hibound == None:
+        VTC_med = np.median(VTC)
+        for i, val in enumerate(VTC):
+            if val < VTC_med:
+                INzone.append(i)
+            if val >= VTC_med:
+                OUTzone.append(i)
+    else:
+        low = np.quantile(VTC, lobound)
+        high = np.quantile(VTC, hibound)
+        for i, val in enumerate(VTC):
+            if val < low:
+                INzone.append(i)
+            if val >= high:
+                OUTzone.append(i)
+    INzone = np.asarray(INzone)
+    OUTzone = np.asarray(OUTzone)
+    return INzone, OUTzone
+
+def find_jumps(array):
+    ### Finds the jumps in an array containing ordered sequences
+    jumps = []
+    for i,_ in enumerate(array):
+        try:
+            if array[i+1] != array[i]+1:
+                jumps.append(i)
+        except:
+            break
+    return jumps
+
+def find_bounds(array):
+    ### Create a list of tuples, each containing the first and last values of every ordered sequences
+    # contained in a 1D array
+    jumps = find_jumps(array)
+    bounds = []
+    for i, jump in enumerate(jumps):
+        if jump == jumps[0]:
+            bounds.append(tuple([array[0], array[jump]]))
+        else:
+            bounds.append(tuple([array[jumps[i-1]+1], array[jump]]))
+        if i == len(jumps)-1:
+            bounds.append(tuple([array[jump+1], array[-1]]))
+    return bounds
+
+def get_VTC_from_file(filepath, lobound = None, hibound = None):
+    data = loadmat(filepath)
+    df_response = pd.DataFrame(data['response'])
+    RT_array= np.asarray(df_response.loc[:,4])
+    RT_interp = interp_RT(RT_array)
+    VTC = compute_VTC(RT_interp)
+    INzone, OUTzone = in_out_zone(VTC, lobound=lobound, hibound=hibound)
+    INbounds = find_bounds(INzone)
+    OUTbounds = find_bounds(OUTzone)
+    return VTC, INbounds, OUTbounds, INzone, OUTzone
+
+def plot_VTC(VTC, figpath=None, save=False):
+    x = np.arange(0, len(VTC))
+    OUT_mask = np.ma.masked_where(VTC >= np.median(VTC), VTC)
+    IN_mask = np.ma.masked_where(VTC < np.median(VTC), VTC)
+    lines = plt.plot(x, OUT_mask, x, IN_mask)
+    fig = plt.plot()
+    plt.setp(lines[0], linewidth=2)
+    plt.setp(lines[1], linewidth=2)
+    plt.legend(('IN zone', 'OUT zone'), loc='upper right')
+    plt.title('IN vs OUT zone')
+    if save == True:
+        plt.savefig(figpath)
+    plt.show()
+
+
 
 def get_SAflow_bids(FOLDERPATH, subj, run, stage, cond=None):
     '''
@@ -19,7 +123,7 @@ def get_SAflow_bids(FOLDERPATH, subj, run, stage, cond=None):
     else:
         task = 'gradCPT'
 
-    if stage == 'epo' or stage == 'raw': # determine extension based on stage
+    if stage == 'epo' or stage == 'raw' or stage == 'preproc_raw': # determine extension based on stage
         extension = '.fif.gz'
     elif stage == 'PSD':
         extension = '.mat'
@@ -140,8 +244,10 @@ def split_events_by_VTC(INzone, OUTzone, events):
                         INevents.append(event)
                     if counter in OUTzone:
                         OUTevents.append(event)
+
             except:
                 print('last event')
+            counter += 1
         elif event[2] == 31:
             try:
                 if events[i+1][2] != 99:
@@ -151,7 +257,7 @@ def split_events_by_VTC(INzone, OUTzone, events):
                         OUTevents.append(event)
             except:
                 print('last event')
-        counter += 1
+            counter += 1
     INevents = np.asarray(INevents)
     OUTevents = np.asarray(OUTevents)
     return INevents, OUTevents
@@ -170,6 +276,7 @@ def split_events_by_VTC_alltrials(INzone, OUTzone, events):
                     OUTevents.append(event)
             except:
                 print('last event')
+            counter += 1
         elif event[2] == 31:
             try:
                 if counter in INzone:
@@ -178,56 +285,74 @@ def split_events_by_VTC_alltrials(INzone, OUTzone, events):
                     OUTevents.append(event)
             except:
                 print('last event')
-        counter += 1
+            counter += 1
     INevents = np.asarray(INevents)
     OUTevents = np.asarray(OUTevents)
     return INevents, OUTevents
 
-def segment_files_INvsOUT(LOGS_DIR, subj, bloc, lobound=None, hibound=None):
+def split_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs=False):
     '''
-    TODO : get lobound and hibound out of this function, in order to retain trials that are interpolated altogether
+    This functions allows to use the logfile to split the epochs obtained in the epo.fif file.
+    It works by comparing the timestamps of IN and OUT events to the timestamps in the epo file events
+    Ultimately, we want to compute our features on all epochs then split them as needed. That's why we gonna use IN and OUTidx.
+    HERE WE KEEP ONLY CORRECT TRIALS
     '''
-    ### Load pre-processed datafile
-    bids_filename = 'sub-{}_ses-recording_task-gradCPT_run-0{}_meg_preproc_raw.fif.gz'.format(subj, bloc)
-    bids_filepath = os.path.join(FOLDERPATH, 'sub-{}'.format(subj), 'ses-recording', 'meg', bids_filename)
-    print(bids_filepath)
+    epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond=None)
+    ### Find logfile to extract VTC
+    log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
+    VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound)
+    ### Find events, split them by IN/OUT and start epoching
+    preproc_path, preproc_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='preproc_raw', cond=None)
+    raw = read_raw_fif(preproc_filename, preload=False)#, min_duration=2/epochs.info['sfreq'])
+    events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
+    INevents, OUTevents = split_events_by_VTC(INzone, OUTzone, events)
+    print('event length : {}'.format(len(events)))
+    INidx = []
+    OUTidx = []
+    epo_events = mne.read_events(epo_filename) # get events from the epochs file (so no resp event)
+    # the droping of epochs is a bit confused because we have to get indices from the current cleaned epochs file
+    for idx, ev in enumerate(epo_events):
+        if ev[0] in INevents[:,0]: #compare timestamps
+            INidx.append(idx)
+        if ev[0] in OUTevents[:,0]:
+            OUTidx.append(idx)
+    INidx = np.array(INidx)
+    OUTidx = np.array(OUTidx)
+    if save_epochs == True:
+        epo_idx = np.array(range(len(epo_events)))
+        IN_todrop = np.delete(epo_idx, INidx) # drop all epochs EXCEPT INidx
+        OUT_todrop = np.delete(epo_idx, OUTidx)
+        INepochs = mne.read_epochs(epo_filename, preload=False)
+        INepochs = INepochs.drop(indices=IN_todrop)
+        OUTepochs = mne.read_epochs(epo_filename, preload=False)
+        OUTepochs = OUTepochs.drop(indices=OUT_todrop)
+        if lobound == None:
+            INpath, INfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='IN')
+        else:
+            INpath, INfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='IN{}'.format(lobound*100))
+        if hibound == None:
+            OUTpath, OUTfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='OUT')
+        else:
+            OUTpath, OUTfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='OUT{}'.format(hibound*100))
+        INepochs.save(INfilename)
+        OUTepochs.save(OUTfilename)
+
+    return INidx, OUTidx
+
+def segment_files(bids_filepath):
     raw = read_raw_fif(bids_filepath, preload=True)
     picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
-
     ### Set some constants for epoching
     baseline = None #(None, 0.0)
     reject = {'mag': 4e-12}
     tmin, tmax = 0, 0.8
-
-    ### Find logfile to extract VTC
-    log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
-    VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=None, hibound=None)
-    ### Find events, split them by IN/OUT and start epoching
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
-    INevents, OUTevents = split_events_by_VTC(INzone, OUTzone, events)
-    try:
-        event_id = {'Freq': 21, 'Rare': 31}
-        INepochs = mne.Epochs(raw, events=INevents, event_id=event_id, tmin=tmin,
-                        tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-    except:
-        event_id = {'Freq': 21}
-        INepochs = mne.Epochs(raw, events=INevents, event_id=event_id, tmin=tmin,
-                        tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-
-    try:
-        event_id = {'Freq': 21, 'Rare': 31}
-        OUTepochs = mne.Epochs(raw, events=OUTevents, event_id=event_id, tmin=tmin,
-                        tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-    except:
-        event_id = {'Freq': 21}
-        OUTepochs = mne.Epochs(raw, events=OUTevents, event_id=event_id, tmin=tmin,
-                        tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-
-    ### Autoreject detects, rejects and interpolate artifacted epochs
+    event_id = {'Freq': 21, 'Rare': 31, 'Resp': 99}
+    epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
+                    tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
     ar = AutoReject()
-    INepochs_clean = ar.fit_transform(INepochs)
-    OUTepochs_clean = ar.fit_transform(OUTepochs)
-    return INepochs_clean, OUTepochs_clean
+    epochs_clean = ar.fit_transform(epochs)
+    return epochs_clean
 
 def compute_PSD(epochs, sf, epochs_length, f=None):
     if f == None:
@@ -276,18 +401,23 @@ def create_pval_mask(pvals, alpha=0.05):
             mask[i] = True
     return mask
 
-def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, COND_LIST):
+def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, COND_LIST, time_avg=True):
     '''
     Returns a list containing 2 (n_conditions) lists, each with n_subj matrices of shape n_freqs X n_channels X n_trials
+    NEXT STEP : MODIFY THIS SO IT RETURNS A LIST OF N_SUBJ * N_BLOCS.
+    AND MAKE A FUNCTION SO THIS LIST IS SPLITED BY IN/OUT IN THE STATS SCRIPT (AND AVERAGED ACROSS TIME)
     '''
     PSD_alldata = []
     for cond in COND_LIST:
         all_cond = [] ## all the data of one condition
         for subj in SUBJ_LIST:
             all_subj = [] ## all the data of one subject
+            all_subj_OUT = []
             for run in BLOCS_LIST:
                 SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, run, stage='PSD', cond=cond)
                 mat = loadmat(SAflow_bidspath)['PSD']
+                if time_avg == True:
+                    mat = np.mean(mat, axis=2) # average PSDs in time across epochs
                 if all_subj == []:
                     all_subj = mat
                 else:

@@ -7,7 +7,8 @@ from pathlib import Path
 import argparse
 import os
 from saflow_utils import load_PSD_data, get_SAflow_bids
-from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, ZONE2575_CONDS
+from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, FEAT_PATH
+import pickle
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -17,6 +18,7 @@ parser.add_argument(
     type=int,
     help="Channels to compute",
 )
+
 
 args = parser.parse_args()
 
@@ -28,16 +30,12 @@ RESULTS_PATH = '/storage/Yann/saflow_DATA/saflow_bids/ML_results/single_feat/LDA
 # - single-features
 # - CV k-fold (maybe 10 ?)
 # - LDA, RF, kNN ?
-def prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, COND_LIST, CHAN=None):
+def prepare_data(PSD_data, FREQ, CHAN=None):
     '''
     Returns X, y and groups arrays from SAflow data for sklearn classification.
-    FOLDERPATH is the base BIDS path
-    SUBJ_LIST and BLOCS_LIST are lists of strings
     FREQ is an integer
     CHAN is an int or a list of int
     '''
-    PSD_data = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, COND_LIST)
-
     # retain desired CHAN(s)
     for i, cond in enumerate(PSD_data):
         for j, subj in enumerate(cond):
@@ -60,21 +58,17 @@ def prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, COND_LIST, CHAN=None):
     X = np.concatenate((X_list), axis=0).reshape(-1, 1)
     y = np.concatenate((y_list), axis=0)
     groups = np.concatenate((groups_list), axis=0)
-
     return X, y, groups
 
-def classif_and_save(X,y,groups, FREQ, CHAN, SAVEPATH):
-    if Path(SAVEPATH).is_file():
-        print(SAVEPATH + ' already exists.')
-        return
-    #cv = ShuffleSplit(test_size=0.1, n_splits=10)
+def classif_singlefeat(X,y,groups, FREQ, CHAN):
     cv = LeaveOneGroupOut()
     clf = LinearDiscriminantAnalysis()
-    save = classification(clf, cv, X, y, groups=groups, perm=100, n_jobs=8)
+    results = classification(clf, cv, X, y, groups=groups, perm=100, n_jobs=8)
     print('Done')
-    print('DA : ' + str(save['acc_score']))
-    print('p value : ' + str(save['acc_pvalue']))
-    savemat(SAVEPATH, save)
+    print('DA : ' + str(results['acc_score']))
+    print('p value : ' + str(results['acc_pvalue']))
+    return results
+
 
 if __name__ == "__main__":
     if not os.path.isdir(RESULTS_PATH):
@@ -83,12 +77,13 @@ if __name__ == "__main__":
     else:
         print('{} already exists.'.format(RESULTS_PATH))
 
-    CHAN = args.channel
+    #CHAN = args.channel
     for FREQ, FREQ_NAME in enumerate(FREQS_NAMES):
         for CHAN in range(270):
-            X, y, groups = prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, ZONE2575_CONDS, CHAN)
+            with open(FEAT_PATH + 'PSD_VTC2575', 'rb') as fp:
+                PSD_data = pickle.load(fp)
+            X, y, groups = prepare_data(PSD_data, FREQ, CHAN)
             print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
+            results = classif_singlefeat(X,y,groups, FREQ, CHAN)
             SAVEPATH = '{}/classif_{}_{}.mat'.format(RESULTS_PATH, FREQ_NAME, CHAN)
-            classif_and_save(X,y,groups, FREQ, CHAN, SAVEPATH)
-
-#### Résultat on veut : elec * freq X trials(IN+OUT) = 1890 X N_trials_tot
+            savemat(SAVEPATH, results)

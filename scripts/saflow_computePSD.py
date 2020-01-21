@@ -11,10 +11,8 @@ if __name__ == "__main__":
     conditions = ZONE2575_CONDS
     for subj in SUBJ_LIST:
         for bloc in BLOCS_LIST:
-            for zone in conditions:
-                SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='epo', cond=zone)
-                data = mne.read_epochs(SAflow_bidspath)
-                psds = compute_PSD(data, data.info['sfreq'], epochs_length = 0.8, f=FREQS)
-                psds = np.mean(psds, axis=2) # average PSDs in time across epochs
-                PSD_bidsname, PSD_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='PSD', cond=zone)
-                savemat(PSD_bidspath, {'PSD': psds})
+            SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='epo', cond=None)
+            data = mne.read_epochs(SAflow_bidspath)
+            psds = compute_PSD(data, data.info['sfreq'], epochs_length = 0.8, f=FREQS)
+            PSD_bidsname, PSD_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='PSD', cond=None)
+            savemat(PSD_bidspath, {'PSD': psds})

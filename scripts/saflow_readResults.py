@@ -45,4 +45,4 @@ if __name__ == "__main__":
     toplot = all_acc
     vmax = np.max(np.max(np.asarray(toplot)))
     vmin = np.min(np.min(np.asarray(toplot)))
-    array_topoplot(toplot, ch_xy, showtitle=True, titles=FREQ_BANDS, savefig=False, figpath=IMG_DIR + 'LDA_L1SO_2575.png' ,vmin=vmin, vmax=vmax, with_mask=True, masks=all_masks)
+    array_topoplot(toplot, ch_xy, showtitle=True, titles=FREQ_BANDS, savefig=True, figpath=IMG_DIR + 'LDA_L1SO_2575_A05.png' ,vmin=vmin, vmax=vmax, with_mask=True, masks=all_masks)

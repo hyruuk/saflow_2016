@@ -23,9 +23,16 @@ def interp_RT(RT):
     for i in range(len(RT)):
         if RT[i] == 0:
             try:
-                RT[i] = np.mean((RT[i-1], RT[i+1]))
-            except:
-                RT[i] = RT[i-1]
+                if RT[i+1] != 0 and RT[i-1] != 0:
+                    RT[i] = np.mean((RT[i-1], RT[i+1]))
+                else:
+                    RT[i] = RT[i-1]
+
+            except: #if RT[i+1] or RT[i-1] doesn't exists (beginning or end of file) replace by nearest RT
+                try:
+                    RT[i] = RT[i-1]
+                except:
+                    RT[i] = RT[i+1]
     RT_interpolated = RT
     return RT_interpolated
 

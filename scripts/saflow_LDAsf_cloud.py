@@ -62,7 +62,7 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
 def classif_singlefeat(X,y,groups, FREQ, CHAN):
     cv = LeaveOneGroupOut()
     clf = LinearDiscriminantAnalysis()
-    results = classification(clf, cv, X, y, groups=groups, perm=100, n_jobs=8)
+    results = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=-1)
     print('Done')
     print('DA : ' + str(results['acc_score']))
     print('p value : ' + str(results['acc_pvalue']))

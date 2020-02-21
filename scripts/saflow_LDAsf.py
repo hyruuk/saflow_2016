@@ -9,6 +9,7 @@ import os
 from saflow_utils import load_PSD_data, get_SAflow_bids
 from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, FEAT_PATH
 import pickle
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -78,6 +79,7 @@ if __name__ == "__main__":
         print('{} already exists.'.format(RESULTS_PATH))
 
     #CHAN = args.channel
+    start = time.time()
     for FREQ, FREQ_NAME in enumerate(FREQS_NAMES):
         for CHAN in range(270):
             with open(FEAT_PATH + 'PSD_VTC2575', 'rb') as fp:
@@ -87,3 +89,5 @@ if __name__ == "__main__":
             results = classif_singlefeat(X,y,groups, FREQ, CHAN)
             SAVEPATH = '{}/classif_{}_{}.mat'.format(RESULTS_PATH, FREQ_NAME, CHAN)
             savemat(SAVEPATH, results)
+    stop = time.time()
+    print('Computed all chans in {} hours'.format(int(stop-start/3600)))

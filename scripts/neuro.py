@@ -93,20 +93,19 @@ def saflow_preproc(filepath, savepath, reportpath):
 
     return raw_data
 
-def segment_files(bids_filepath):
+def segment_files(bids_filepath, tmin=0, tmax=0.8):
     raw = read_raw_fif(bids_filepath, preload=True)
     picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
     ### Set some constants for epoching
     baseline = None #(None, 0.0)
     reject = {'mag': 4e-12}
-    tmin, tmax = 0, 0.8
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
     event_id = {'Freq': 21, 'Rare': 31, 'Resp': 99}
     epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
                     tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-    ar = AutoReject()
-    epochs_clean = ar.fit_transform(epochs)
-    return epochs_clean
+    ar = AutoReject(n_jobs=6)
+    epochs_clean, autoreject_log = ar.fit_transform(epochs, return_log=True)
+    return epochs_clean, autoreject_log
 
 
 def split_events_by_VTC(INzone, OUTzone, events):
@@ -180,6 +179,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
     TODO : FIND A WAY TO EARN TIME BY NOT LOADING THE DATA BUT JUST THE EVENTS
     '''
     epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond=None)
+    epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
     ### Find logfile to extract VTC
     log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
     VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound)
@@ -187,11 +187,9 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
     events_fname, events_fpath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='preproc_raw', cond=None)
     raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
-    #events = mne.read_events(events_fpath)
     INevents, OUTevents = split_events_by_VTC(INzone, OUTzone, events)
     INidx = []
     OUTidx = []
-    epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
     # the droping of epochs is a bit confused because we have to get indices from the current cleaned epochs file
     for idx, ev in enumerate(epo_events):
         if ev[0] in INevents[:,0]: #compare timestamps
@@ -200,6 +198,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
             OUTidx.append(idx)
     INidx = np.array(INidx)
     OUTidx = np.array(OUTidx)
+
     if save_epochs == True:
         epo_idx = np.array(range(len(epo_events)))
         IN_todrop = np.delete(epo_idx, INidx) # drop all epochs EXCEPT INidx
@@ -228,7 +227,7 @@ def compute_PSD(epochs, sf, epochs_length, f=None):
     data = epochs.get_data() # On sort les data de l'objet MNE pour les avoir dans une matrice (un numpy array pour être précis)
     data = data.swapaxes(0,1).swapaxes(1,2) # On réarange l'ordre des dimensions pour que ça correspond à ce qui est requis par Brainpipe
     objet_PSD = feature.power(sf=int(sf), npts=int(sf*epochs_length), width=int((sf*epochs_length)/2), step=int((sf*epochs_length)/4), f=f, method='hilbert1') # La fonction Brainpipe pour créer un objet de calcul des PSD
-    data = data[:,0:960,:] # weird trick pour corriger un pb de segmentation jpense
+    data = data[:,0:sf*epochs_length,:] # weird trick pour corriger un pb de segmentation jpense
     #print(data.shape)
     psds = objet_PSD.get(data)[0] # Ici on calcule la PSD !
     return psds
@@ -247,7 +246,39 @@ def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True):
                 mat = np.mean(mat, axis=2) # average PSDs in time across epochs
             all_subj.append(mat)
         PSD_alldata.append(all_subj)
-    return PSD_alldata # List containing 2 (n_conditions) lists, each with n_subj matrices of shape n_freqs X n_channels X n_trials
+    return PSD_alldata
+
+def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
+    VTC_alldata = []
+    for subj in SUBJ_LIST:
+        all_subj = [] ## all the data of one subject
+        for run in BLOCS_LIST:
+            # get events from epochs file
+            epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, run, 'epo', cond=None)
+            events_epoched = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
+            # get events from original file (only 599 events)
+            events_fname, events_fpath = get_SAflow_bids(FOLDERPATH, subj, run, stage='preproc_raw', cond=None)
+            raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
+            all_events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
+            stim_idx = []
+            for i in range(len(all_events)):
+                 if all_events[i,2] in [21,31]:
+                     stim_idx.append(i)
+            all_events = all_events[stim_idx]
+            # compute VTC for all trials
+            log_file = find_logfile(subj,run,os.listdir(LOGS_DIR))
+            VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=None, hibound=None)
+            print(len(VTC))
+            print(log_file)
+            print(len(all_events))
+            print(events_fname)
+            epochs_VTC = []
+            for event_time in events_epoched[:,0]:
+                idx = list(all_events[:,0]).index(event_time)
+                epochs_VTC.append(VTC[idx])
+            all_subj.append(np.array(epochs_VTC))
+        VTC_alldata.append(all_subj)
+    return VTC_alldata
 
 def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None):
     '''

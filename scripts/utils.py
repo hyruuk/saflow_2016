@@ -13,17 +13,18 @@ def get_SAflow_bids(FOLDERPATH, subj, run, stage, cond=None):
     else:
         task = 'gradCPT'
 
-    if stage == 'epo' or stage == 'raw' or stage == 'preproc_raw': # determine extension based on stage
+    if 'epo' in stage or 'raw' in stage: # determine extension based on stage
         extension = '.fif.gz'
-    elif stage == 'PSD':
+    elif 'PSD' in stage:
         extension = '.mat'
-    elif stage == 'sources':
+    elif 'sources' in stage:
         extension = '.hd5'
-    elif stage == 'events':
+    elif 'events' in stage:
         extension = '.tsv'
+    elif 'ARlog' in stage:
+        extension = '.hdf5'
 
-
-    if stage == 'events':
+    if 'events' in stage:
         SAflow_bidsname = 'sub-{}_ses-recording_task-{}_run-0{}_{}{}'.format(subj, task, run, stage, extension)
     else:
         if cond == None: # build basename with or without cond

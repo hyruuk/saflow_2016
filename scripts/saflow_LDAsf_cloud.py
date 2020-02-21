@@ -11,6 +11,8 @@ from neuro import load_PSD_data
 from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, FEAT_PATH
 import pickle
 import time
+from joblib import Parallel, delayed
+from itertools import product
 
 
 parser = argparse.ArgumentParser()

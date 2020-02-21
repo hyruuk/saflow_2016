@@ -94,12 +94,12 @@ def find_bounds(array):
             bounds.append(tuple([array[jump+1], array[-1]]))
     return bounds
 
-def get_VTC_from_file(filepath, lobound = None, hibound = None):
+def get_VTC_from_file(filepath, lobound=None, hibound=None, filt=True, filt_order=3, filt_cutoff=0.05):
     data = loadmat(filepath)
     df_response = pd.DataFrame(data['response'])
     RT_array= np.asarray(df_response.loc[:,4])
     RT_interp = interp_RT(RT_array)
-    VTC = compute_VTC(RT_interp)
+    VTC = compute_VTC(RT_interp, filt=filt, filt_order=filt_order, filt_cutoff=filt_cutoff)
     INzone, OUTzone = in_out_zone(VTC, lobound=lobound, hibound=hibound)
     INbounds = find_bounds(INzone)
     OUTbounds = find_bounds(OUTzone)

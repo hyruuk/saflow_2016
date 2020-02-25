@@ -20,7 +20,7 @@ parser.add_argument(
     "-f",
     "--features",
     default='PSD_VTC',
-    type=int,
+    type=str,
     help="Channels to compute",
 )
 
@@ -81,7 +81,7 @@ def LDAsf(CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
 
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features
-RESULTS_PATH = '../results/single_feat/LDA_L1SO' + args.features
+RESULTS_PATH = '../results/single_feat/LDA_L1SO_' + args.features
 
 if __name__ == "__main__":
     if not os.path.isdir(RESULTS_PATH):

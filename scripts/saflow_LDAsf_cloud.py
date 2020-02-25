@@ -48,7 +48,7 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
     X_list = []
     y_list = []
     groups_list = []
-    for i, cond in enumerate(PSD_dloadloadload_PSD_dataload_PSD_data_PSD_dataload_PSD_data_PSD_dataata):
+    for i, cond in enumerate(PSD_data):
         for j, subj in enumerate(cond):
             X_list.append(subj)
             if i == 0:

@@ -227,12 +227,12 @@ def compute_PSD(epochs, sf, epochs_length, f=None):
     data = epochs.get_data() # On sort les data de l'objet MNE pour les avoir dans une matrice (un numpy array pour être précis)
     data = data.swapaxes(0,1).swapaxes(1,2) # On réarange l'ordre des dimensions pour que ça correspond à ce qui est requis par Brainpipe
     objet_PSD = feature.power(sf=int(sf), npts=int(sf*epochs_length), width=int((sf*epochs_length)/2), step=int((sf*epochs_length)/4), f=f, method='hilbert1') # La fonction Brainpipe pour créer un objet de calcul des PSD
-    data = data[:,0:sf*epochs_length,:] # weird trick pour corriger un pb de segmentation jpense
+    data = data[:,0:int(sf*epochs_length),:] # weird trick pour corriger un pb de segmentation jpense
     #print(data.shape)
     psds = objet_PSD.get(data)[0] # Ici on calcule la PSD !
     return psds
 
-def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True):
+def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True, stage='PSD'):
     '''
     Returns a list containing n_subj lists of n_blocs matrices of shape n_freqs X n_channels X n_trials
     '''
@@ -240,7 +240,7 @@ def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True):
     for subj in SUBJ_LIST:
         all_subj = [] ## all the data of one subject
         for run in BLOCS_LIST:
-            SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, run, stage='PSD', cond=None)
+            SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, run, stage=stage, cond=None)
             mat = loadmat(SAflow_bidspath)['PSD']
             if time_avg == True:
                 mat = np.mean(mat, axis=2) # average PSDs in time across epochs
@@ -280,11 +280,11 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
         VTC_alldata.append(all_subj)
     return VTC_alldata
 
-def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None):
+def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD'):
     '''
     This func splits the PSD data into two conditions. It returns a list of 2 (cond1 and cond2), each containing a list of n_subject matrices of shape n_freqs X n_channels X n_trials
     '''
-    PSD_alldata = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True)
+    PSD_alldata = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True, stage=stage)
     PSD_cond1 = []
     PSD_cond2 = []
     for subj_idx, subj in enumerate(SUBJ_LIST):

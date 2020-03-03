@@ -8,20 +8,19 @@ import argparse
 import os
 from saflow_utils import load_PSD_data, get_SAflow_bids
 from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, ZONE2575_CONDS, ZONE_CONDS
+from joblib import Parallel, delayed
+from itertools import product
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "-c",
-    "--channel",
-    default=0,
-    type=int,
+    "-f",
+    "--features",
+    default='PSD_VTC',
+    type=str,
     help="Channels to compute",
 )
 
 args = parser.parse_args()
-
-RESULTS_PATH = '/storage/Yann/saflow_DATA/saflow_bids/ML_results/single_feat/LDAsf_1000perm_intrasubj_K10_2575'
-
 
 
 ### ML single subject classification of IN vs OUT epochs
@@ -62,19 +61,6 @@ def prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, COND_LIST, CHAN=None):
 
     return X, y, groups
 
-def classif_and_save(X,y,groups, FREQ, CHAN, SAVEPATH):
-    if Path(SAVEPATH).is_file():
-        print(SAVEPATH + ' already exists.')
-        return
-    #cv = ShuffleSplit(test_size=0.1, n_splits=10)
-    cv = LeaveOneGroupOut()
-    clf = LinearDiscriminantAnalysis()
-    save = classification(clf, cv, X, y, groups=groups, perm=100, n_jobs=8)
-    print('Done')
-    print('DA : ' + str(save['acc_score']))
-    print('p value : ' + str(save['acc_pvalue']))
-    savemat(SAVEPATH, save)
-
 def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     if Path(SAVEPATH).is_file():
         print(SAVEPATH + ' already exists.')
@@ -83,11 +69,24 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     #cv = LeaveOneGroupOut()
     clf = LinearDiscriminantAnalysis()
     print(y.shape)
-    save = classification(clf, cv, X.reshape(-1, 1), y, groups=None, perm=1001, n_jobs=8)
+    results = classification(clf, cv, X.reshape(-1, 1), y, groups=None, perm=1001, n_jobs=-1)
     print('Done')
     print('DA : ' + str(save['acc_score']))
     print('p value : ' + str(save['acc_pvalue']))
-    savemat(SAVEPATH, save)
+    return results
+
+def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
+    with open(FEAT_FILE, 'rb') as fp:
+        PSD_data = pickle.load(fp)
+    X, y, groups = prepare_data(FOLDERPATH, [SUBJ], BLOCS_LIST, FREQ, ZONE2575_CONDS, CHAN)
+    print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
+    SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ, FREQ_NAME, CHAN)
+    results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
+    savemat(SAVEPATH, results)
+
+FEAT_PATH = '../features/'
+FEAT_FILE = FEAT_PATH + args.features
+RESULTS_PATH = '../results/single_feat/LDA_L1SO_' + args.features
 
 if __name__ == "__main__":
     if not os.path.isdir(RESULTS_PATH):
@@ -96,13 +95,8 @@ if __name__ == "__main__":
     else:
         print('{} already exists.'.format(RESULTS_PATH))
 
-    CHAN = args.channel
-    for SUBJ in SUBJ_LIST:
-        for FREQ, FREQ_NAME in enumerate(FREQS_NAMES):
-            for CHAN in range(270):
-                X, y, groups = prepare_data(FOLDERPATH, [SUBJ], BLOCS_LIST, FREQ, ZONE2575_CONDS, CHAN)
-                print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
-                SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ, FREQ_NAME, CHAN)
-                classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
+    Parallel(n_jobs=-1)(
+        delayed(LDAsf)(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES), SUBJ_LIST))
+    )
 
 #### Résultat on veut : elec * freq X trials(IN+OUT) = 1890 X N_trials_tot

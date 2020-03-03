@@ -64,7 +64,7 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
 def classif_singlefeat(X,y,groups, FREQ, CHAN):
     cv = LeaveOneGroupOut()
     clf = LinearDiscriminantAnalysis()
-    results = classification(clf, cv, X, y, groups=groups, perm=1000, n_jobs=-1)
+    results = classification(clf, cv, X, y, groups=groups, perm=1001, n_jobs=-1)
     print('Done')
     print('DA : ' + str(results['acc_score']))
     print('p value : ' + str(results['acc_pvalue']))
@@ -82,6 +82,7 @@ def LDAsf(CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features
 RESULTS_PATH = '../results/single_feat/LDA_L1SO_' + args.features
+
 
 if __name__ == "__main__":
     if not os.path.isdir(RESULTS_PATH):

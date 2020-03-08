@@ -97,13 +97,13 @@ def segment_files(bids_filepath, tmin=0, tmax=0.8):
     raw = read_raw_fif(bids_filepath, preload=True)
     picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
     ### Set some constants for epoching
-    baseline = None #(None, 0.0)
+    baseline = (None, -0.05)
     reject = {'mag': 4e-12}
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
     event_id = {'Freq': 21, 'Rare': 31, 'Resp': 99}
     epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
                     tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-    ar = AutoReject(n_jobs=6)
+    ar = AutoReject(n_jobs=-1)
     epochs_clean, autoreject_log = ar.fit_transform(epochs, return_log=True)
     return epochs_clean, autoreject_log
 

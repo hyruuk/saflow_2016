@@ -12,6 +12,7 @@ if __name__ == "__main__":
             epoched_path, epoched_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600epo', cond=None)
             ARlog_path, ARlog_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='ARlog', cond=None)
             epochs_clean, AR_log = segment_files(preproc_filename, tmin=-0.4, tmax=1.2)
-            epochs_clean.save(epoched_filename)
+            epochs_clean.save(epoched_filename, overwrite=True)
+            del epochs_clean
             with open(ARlog_filename, 'wb') as fp:
                 pickle.dump(AR_log, fp)

@@ -29,7 +29,7 @@ args = parser.parse_args()
 CONDITION = args.condition
 ALPHA = args.alpha
 
-RESULTS_PATH = '/storage/Yann/saflow_DATA/saflow_bids/ML_results/single_feat/' + CONDITION
+RESULTS_PATH = '/storage/Yann/saflow_DATA/results/single_feat/' + CONDITION
 FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
 
 if __name__ == "__main__":

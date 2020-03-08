@@ -1,7 +1,9 @@
 from scipy.io import loadmat, savemat
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit, GroupShuffleSplit, ShuffleSplit, LeaveOneGroupOut
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.model_selection import StratifiedShuffleSplit, GroupShuffleSplit, ShuffleSplit, LeaveOneGroupOut, RandomizedSearchCV
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 from mlneurotools.ml import classification, StratifiedShuffleGroupSplit
 from pathlib import Path
 import argparse

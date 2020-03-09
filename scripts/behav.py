@@ -42,7 +42,7 @@ def compute_VTC(RT_interp, filt=True, filt_order=3, filt_cutoff=0.05):
     if filt == True:
         b, a = signal.butter(filt_order,filt_cutoff)
         VTC_filtered = signal.filtfilt(b, a, abs(VTC))
-    VTC = VTC_filtered
+        VTC = VTC_filtered
     return VTC
 
 def in_out_zone(VTC, lobound = None, hibound = None):
@@ -105,16 +105,22 @@ def get_VTC_from_file(filepath, lobound=None, hibound=None, filt=True, filt_orde
     OUTbounds = find_bounds(OUTzone)
     return VTC, INbounds, OUTbounds, INzone, OUTzone
 
-def plot_VTC(VTC, figpath=None, save=False):
+def plot_VTC(VTC, figpath=None, save=False, INOUT=True):
     x = np.arange(0, len(VTC))
-    OUT_mask = np.ma.masked_where(VTC >= np.median(VTC), VTC)
-    IN_mask = np.ma.masked_where(VTC < np.median(VTC), VTC)
-    lines = plt.plot(x, OUT_mask, x, IN_mask)
-    fig = plt.plot()
-    plt.setp(lines[0], linewidth=2)
-    plt.setp(lines[1], linewidth=2)
-    plt.legend(('IN zone', 'OUT zone'), loc='upper right')
-    plt.title('IN vs OUT zone')
+    if INOUT:
+        OUT_mask = np.ma.masked_where(VTC >= np.median(VTC), VTC)
+        IN_mask = np.ma.masked_where(VTC < np.median(VTC), VTC)
+        lines = plt.plot(x, OUT_mask, x, IN_mask)
+        fig = plt.plot()
+        plt.setp(lines[0], linewidth=2)
+        plt.setp(lines[1], linewidth=2)
+        plt.legend(('IN zone', 'OUT zone'), loc='upper right')
+        plt.title('IN vs OUT zone')
+    else:
+        line = plt.plot(x, VTC)
+        fig = plt.plot()
+        plt.setp(line, linewidth=2)
+        plt.title('VTC')
     if save == True:
         plt.savefig(figpath)
     plt.show()

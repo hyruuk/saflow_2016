@@ -1,8 +1,9 @@
 from scipy.io import loadmat
 import numpy as np
 from mne.io import read_raw_ctf
-from saflow_utils import array_topoplot, get_ch_pos, create_pval_mask
-from saflow_params import IMG_DIR
+from utils import array_topoplot, create_pval_mask
+from neuro import get_ch_pos
+from saflow_params import IMG_DIR, FREQS_NAMES, CH_FILE
 import itertools
 from mlneurotools.stats import compute_pval
 import argparse
@@ -11,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--condition",
-    default='LDA_L1SO_2575',
+    default='LDA_L1SO_PSD_VTC2575',
     type=str,
     help="Defines classifier and condition set in the form CLASS_XVAL_SPLIT(optionnal)",
 )
@@ -29,12 +30,12 @@ args = parser.parse_args()
 CONDITION = args.condition
 ALPHA = args.alpha
 
-RESULTS_PATH = '/storage/Yann/saflow_DATA/results/single_feat/' + CONDITION
-FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
+RESULTS_PATH = '/home/hyruuk/pCloudDrive/science/saflow/results/single_feat/' + CONDITION
+FREQ_BANDS = FREQS_NAMES
 
 if __name__ == "__main__":
     ##### obtain ch_pos
-    filename = '/storage/Yann/saflow_DATA/alldata/SA04_SAflow-yharel_20190411_01.ds'
+    filename = CH_FILE
     raw = read_raw_ctf(filename, preload=False, verbose=False)
     ch_xy = get_ch_pos(raw)
     raw.close()

@@ -169,7 +169,7 @@ def split_events_by_VTC_alltrials(INzone, OUTzone, events):
     OUTevents = np.asarray(OUTevents)
     return INevents, OUTevents
 
-def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs=False):
+def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs=False, filt_order=3, filt_cutoff=0.05):
     '''
     This functions allows to use the logfile to split the epochs obtained in the epo.fif file.
     It works by comparing the timestamps of IN and OUT events to the timestamps in the epo file events
@@ -182,7 +182,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
     epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
     ### Find logfile to extract VTC
     log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
-    VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound)
+    VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound, filt=True, filt_order=filt_order, filt_cutoff=filt_cutoff)
     ### Find events, split them by IN/OUT and start epoching
     events_fname, events_fpath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='preproc_raw', cond=None)
     raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
@@ -280,7 +280,7 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
         VTC_alldata.append(all_subj)
     return VTC_alldata
 
-def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD'):
+def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD', filt_order=3, filt_cutoff=0.05):
     '''
     This func splits the PSD data into two conditions. It returns a list of 2 (cond1 and cond2), each containing a list of n_subject matrices of shape n_freqs X n_channels X n_trials
     '''
@@ -293,7 +293,7 @@ def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hi
         for bloc_idx, bloc in enumerate(BLOCS_LIST):
             print('Splitting sub-{}_run-{}'.format(subj, bloc))
             if by == 'VTC':
-                INidx, OUTidx = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False)
+                INidx, OUTidx = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
                 cond1_idx = INidx
                 cond2_idx = OUTidx
             if bloc_idx == 0: # if first bloc, init ndarray size using the first matrix

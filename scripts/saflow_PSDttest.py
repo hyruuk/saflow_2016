@@ -8,19 +8,24 @@ from mlneurotools.stats import ttest_perm
 import matplotlib.pyplot as plt
 from neuro import split_PSD_data
 from utils import create_pval_mask, array_topoplot
-from saflow_params import FOLDERPATH, IMG_DIR, FREQS_NAMES, SUBJ_LIST, BLOCS_LIST, FEAT_PATH
+from saflow_params import FOLDERPATH, IMG_DIR, FREQS_NAMES, SUBJ_LIST, BLOCS_LIST, FEAT_PATH, CH_FILE
 import pickle
 
 
 ALPHA = 0.05
-filename = 'PSD_VTC'
+filename = 'PSD_VTC2575'
 
+def compute_reldiff(A, B):
+    A_avg = np.mean(A, axis=0)
+    B_avg = np.mean(B, axis=0)
+    reldiff = (A_avg-B_avg)/B_avg
+    return reldiff
 
 ### OPEN PSDS AND CREATE TOPOPLOTS
 #### ALL SUBJ TOPOPLOT
 if __name__ == "__main__":
     # get ch x and y coordinates
-    ch_file = '/storage/Yann/saflow_DATA/alldata/SA04_SAflow-yharel_20190411_01.ds'
+    ch_file = CH_FILE
     raw = mne.io.read_raw_ctf(ch_file, verbose=False)
     ch_xy = get_ch_pos(raw)
     raw.close()
@@ -41,7 +46,6 @@ if __name__ == "__main__":
     tvalues = []
     pvalues = []
     for i, freq in enumerate(FREQS_NAMES):
-        print(PSD_alldata[0][:,i,:].shape)
         tvals, pvals = ttest_perm(PSD_alldata[0][:,i,:], PSD_alldata[1][:,i,:], # cond1 = IN, cond2 = OUT
         n_perm=10000,
         n_jobs=-1,
@@ -50,6 +54,7 @@ if __name__ == "__main__":
         two_tailed=True)
         tvalues.append(tvals)
         pvalues.append(pvals)
+        power_diff.append(compute_reldiff(PSD_alldata[0][:,i,:], PSD_alldata[1][:,i,:]))
         masks.append(create_pval_mask(pvals, alpha=ALPHA))
 
     # plot
@@ -60,11 +65,27 @@ if __name__ == "__main__":
                     ch_xy,
                     showtitle=True,
                     titles=FREQS_NAMES,
-                    savefig=False,
+                    savefig=True,
                     figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',
                     with_mask=True,
                     masks=masks)
-    #plt.close(fig=fig)
+    plt.close(fig=fig)
+
+    toplot = power_diff
+    vmax = np.max(np.max(abs(np.asarray(toplot))))
+    vmin = -vmax
+    fig = array_topoplot(toplot,
+                    ch_xy,
+                    showtitle=True,
+                    titles=FREQS_NAMES,
+                    savefig=True,
+                    figpath=IMG_DIR + '{}_reldiff_12subj.png'.format(filename,str(ALPHA)[2:]),
+                    vmin=vmin,
+                    vmax=vmax,
+                    cmap='coolwarm',
+                    with_mask=True,
+                    masks=masks)
+    plt.close(fig=fig)

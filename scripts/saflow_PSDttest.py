@@ -12,7 +12,9 @@ from saflow_params import FOLDERPATH, IMG_DIR, FREQS_NAMES, SUBJ_LIST, BLOCS_LIS
 import pickle
 
 
-ALPHA = 0.001
+ALPHA = 0.05
+filename = 'PSD_VTC'
+
 
 ### OPEN PSDS AND CREATE TOPOPLOTS
 #### ALL SUBJ TOPOPLOT
@@ -24,7 +26,7 @@ if __name__ == "__main__":
     raw.close()
 
     # load PSD data
-    with open(FEAT_PATH + 'PSD_VTC1585', 'rb') as fp:
+    with open(FEAT_PATH + filename, 'rb') as fp:
         PSD_alldata = pickle.load(fp)
 
     # average across trials
@@ -39,9 +41,10 @@ if __name__ == "__main__":
     tvalues = []
     pvalues = []
     for i, freq in enumerate(FREQS_NAMES):
-        tvals, pvals = ttest_perm(PSD_alldata[0][i,:,:], PSD_alldata[1][i,:,:], # cond1 = IN, cond2 = OUT
-        n_perm=0,
-        n_jobs=6,
+        print(PSD_alldata[0][:,i,:].shape)
+        tvals, pvals = ttest_perm(PSD_alldata[0][:,i,:], PSD_alldata[1][:,i,:], # cond1 = IN, cond2 = OUT
+        n_perm=10000,
+        n_jobs=-1,
         correction='maxstat',
         paired=True,
         two_tailed=True)
@@ -57,11 +60,11 @@ if __name__ == "__main__":
                     ch_xy,
                     showtitle=True,
                     titles=FREQS_NAMES,
-                    savefig=True,
-                    figpath=IMG_DIR + 'INvsOUT1585_tvals_12subj_A{}_maxstat.png'.format(str(ALPHA)[2:]),
+                    savefig=False,
+                    figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',
                     with_mask=True,
                     masks=masks)
-    plt.close(fig=fig)
+    #plt.close(fig=fig)

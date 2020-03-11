@@ -15,6 +15,7 @@ import pickle
 import time
 from joblib import Parallel, delayed
 from itertools import product
+from scipy.stats.mstats import zscore
 
 
 parser = argparse.ArgumentParser()
@@ -33,7 +34,8 @@ args = parser.parse_args()
 # - single-features
 # - CV k-fold (maybe 10 ?)
 # - LDA, RF, kNN ?
-def prepare_data(PSD_data, FREQ, CHAN=None):
+def prepare_data(PSD_data, FREQ, CHAN=None, norm=True):
+    # TODO : ADD OPTION TO ZTRANSFORM
     '''
     Returns X, y and groups arrays from SAflow data for sklearn classification.
     FREQ is an integer
@@ -43,10 +45,15 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
     for i, cond in enumerate(PSD_data):
         for j, subj in enumerate(cond):
             if CHAN != None:
-                PSD_data[i][j] = PSD_data[i][j][FREQ,CHAN,:]
+                if norm:
+                    PSD_data[i][j] = zscore(PSD_data[i][j][FREQ,CHAN,:])
+                else:
+                    PSD_data[i][j] = PSD_data[i][j][FREQ,CHAN,:]
             else:
-                PSD_data[i][j] = PSD_data[i][j][FREQ,:,:]
-
+                if norm:
+                    PSD_data[i][j] = zscore(PSD_data[i][j][FREQ,:,:], axis=1) # CHECK IF IT IS THE RIGHT AXIS
+                else:
+                    PSD_data[i][j] = PSD_data[i][j][FREQ,:,:]
     X_list = []
     y_list = []
     groups_list = []
@@ -63,6 +70,10 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
     groups = np.concatenate((groups_list), axis=0)
     return X, y, groups
 
+
+# TODO : normalize data per each subject : z transform train data, then transform test data with mean and std of train
+
+
 def classif_singlefeat(X,y,groups, FREQ, CHAN):
     cv = LeaveOneGroupOut()
     inner_cv = LeaveOneGroupOut()
@@ -71,9 +82,8 @@ def classif_singlefeat(X,y,groups, FREQ, CHAN):
     p_grid['C']= [1, 10, 100, 1000]
     n_iter_search=10
     svc = SVC()
-    Rnd_Srch = RandomizedSearchCV(svc, param_distributions=p_grid,
+    clf = RandomizedSearchCV(svc, param_distributions=p_grid,
                                    n_iter=n_iter_search, cv=inner_cv)
-    clf = make_pipeline(StandardScaler(),Rnd_Srch)
     results = classification(clf, cv, X, y, groups=groups, perm=1001, n_jobs=-1)
     print('Done')
     print('DA : ' + str(results['acc_score']))
@@ -81,13 +91,16 @@ def classif_singlefeat(X,y,groups, FREQ, CHAN):
     return results
 
 def optiSVMsf(CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
-    with open(FEAT_FILE, 'rb') as fp:
-        PSD_data = pickle.load(fp)
-    X, y, groups = prepare_data(PSD_data, FREQ, CHAN)
-    print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
-    results = classif_singlefeat(X,y,groups, FREQ, CHAN)
     SAVEPATH = '{}/classif_{}_{}.mat'.format(RESULTS_PATH, FREQS_NAMES[FREQ], CHAN)
-    savemat(SAVEPATH, results)
+    if not os.path.exists(SAVEPATH):
+        with open(FEAT_FILE, 'rb') as fp:
+            PSD_data = pickle.load(fp)
+        X, y, groups = prepare_data(PSD_data, FREQ, CHAN)
+        print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
+        results = classif_singlefeat(X,y,groups, FREQ, CHAN)
+        savemat(SAVEPATH, results)
+    else:
+        print('Already exists : {}'.format(SAVEPATH))
 
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features
@@ -100,7 +113,6 @@ if __name__ == "__main__":
         print('Results folder created at : {}'.format(RESULTS_PATH))
     else:
         print('{} already exists.'.format(RESULTS_PATH))
-
     Parallel(n_jobs=-1)(
         delayed(optiSVMsf)(CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ in product(range(270), range(len(FREQS_NAMES)))
     )

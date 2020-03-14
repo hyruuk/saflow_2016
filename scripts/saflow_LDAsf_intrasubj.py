@@ -6,7 +6,8 @@ from mlneurotools.ml import classification, StratifiedShuffleGroupSplit
 from pathlib import Path
 import argparse
 import os
-from saflow_utils import load_PSD_data, get_SAflow_bids
+from neuro import load_PSD_data
+from utils import get_SAflow_bids
 from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, ZONE2575_CONDS, ZONE_CONDS
 from joblib import Parallel, delayed
 from itertools import product
@@ -86,7 +87,7 @@ def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
 
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features
-RESULTS_PATH = '../results/single_feat/LDA_L1SO_' + args.features
+RESULTS_PATH = '../results/single_feat/LDA_singlesubj_L1SO_' + args.features
 
 if __name__ == "__main__":
     if not os.path.isdir(RESULTS_PATH):

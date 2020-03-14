@@ -73,13 +73,16 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     return results
 
 def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
-    with open(FEAT_FILE, 'rb') as fp:
-        PSD_data = pickle.load(fp)
-    X, y = prepare_data(PSD_data, SUBJ, FREQ, CHAN)
-    print('sub-{}, Computing chan {} in {} band :'.format(SUBJ_LIST[SUBJ], CHAN, FREQS_NAMES[FREQ]))
     SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ_LIST[SUBJ], FREQS_NAMES[FREQ], CHAN)
-    results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
-    savemat(SAVEPATH, results)
+    if not os.path.exists(SAVEPATH):
+        with open(FEAT_FILE, 'rb') as fp:
+            PSD_data = pickle.load(fp)
+        X, y = prepare_data(PSD_data, SUBJ, FREQ, CHAN)
+        print('sub-{}, Computing chan {} in {} band :'.format(SUBJ_LIST[SUBJ], CHAN, FREQS_NAMES[FREQ]))
+        results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
+        savemat(SAVEPATH, results)
+    else:
+        print('Already exists : {}'.format(SAVEPATH))
 
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features

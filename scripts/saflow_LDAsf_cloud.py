@@ -71,13 +71,16 @@ def classif_singlefeat(X,y,groups, FREQ, CHAN):
     return results
 
 def LDAsf(CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
-    with open(FEAT_FILE, 'rb') as fp:
-        PSD_data = pickle.load(fp)
-    X, y, groups = prepare_data(PSD_data, FREQ, CHAN)
-    print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
-    results = classif_singlefeat(X,y,groups, FREQ, CHAN)
     SAVEPATH = '{}/classif_{}_{}.mat'.format(RESULTS_PATH, FREQS_NAMES[FREQ], CHAN)
-    savemat(SAVEPATH, results)
+    if not os.path.exists(SAVEPATH):
+        with open(FEAT_FILE, 'rb') as fp:
+            PSD_data = pickle.load(fp)
+        X, y, groups = prepare_data(PSD_data, FREQ, CHAN)
+        print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
+        results = classif_singlefeat(X,y,groups, FREQ, CHAN)
+        savemat(SAVEPATH, results)
+    else:
+        print('Already exists : {}'.format(SAVEPATH))
 
 FEAT_PATH = '../features/'
 FEAT_FILE = FEAT_PATH + args.features

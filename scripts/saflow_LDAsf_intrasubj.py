@@ -11,6 +11,7 @@ from utils import get_SAflow_bids
 from saflow_params import FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQS_NAMES, ZONE2575_CONDS, ZONE_CONDS
 from joblib import Parallel, delayed
 from itertools import product
+import pickle
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -74,10 +75,9 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
 def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
     with open(FEAT_FILE, 'rb') as fp:
         PSD_data = pickle.load(fp)
-
-    X, y, groups = prepare_data(PSD_data, [SUBJ], FREQ, CHAN)
+    X, y = prepare_data(PSD_data, SUBJ, FREQ, CHAN)
     print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
-    SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ, FREQ_NAME, CHAN)
+    SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ_LIST[SUBJ], FREQ_NAME, CHAN)
     results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
     savemat(SAVEPATH, results)
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         print('{} already exists.'.format(RESULTS_PATH))
 
     Parallel(n_jobs=-1)(
-        delayed(LDAsf)(SUBJ_LIST[SUBJ], CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES)), range(len(SUBJ_LIST)))
+        delayed(LDAsf)(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES)), range(len(SUBJ_LIST)))
     )
 
 #### Résultat on veut : elec * freq X trials(IN+OUT) = 1890 X N_trials_tot

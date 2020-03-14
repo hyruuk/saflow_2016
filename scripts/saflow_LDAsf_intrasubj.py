@@ -68,15 +68,15 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     print(y.shape)
     results = classification(clf, cv, X.reshape(-1, 1), y, groups=None, perm=1001, n_jobs=-1)
     print('Done')
-    print('DA : ' + str(save['acc_score']))
-    print('p value : ' + str(save['acc_pvalue']))
+    print('DA : ' + str(result['acc_score']))
+    print('p value : ' + str(result['acc_pvalue']))
     return results
 
 def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
     with open(FEAT_FILE, 'rb') as fp:
         PSD_data = pickle.load(fp)
     X, y = prepare_data(PSD_data, SUBJ, FREQ, CHAN)
-    print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
+    print('sub-{}, Computing chan {} in {} band :'.format(SUBJ_LIST[SUBJ], CHAN, FREQS_NAMES[FREQ]))
     SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ_LIST[SUBJ], FREQS_NAMES[FREQ], CHAN)
     results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
     savemat(SAVEPATH, results)

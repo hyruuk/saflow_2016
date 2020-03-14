@@ -28,7 +28,7 @@ args = parser.parse_args()
 # - single-features
 # - CV k-fold (maybe 10 ?)
 # - LDA, RF, kNN ?
-def prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, COND_LIST, CHAN=None):
+def prepare_data(PSD_data, SUBJ, FREQ, CHAN=None):
     '''
     Returns X, y and groups arrays from SAflow data for sklearn classification.
     FOLDERPATH is the base BIDS path
@@ -36,38 +36,33 @@ def prepare_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, FREQ, COND_LIST, CHAN=None):
     FREQ is an integer
     CHAN is an int or a list of int
     '''
-    PSD_data = load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, COND_LIST)
-
+    new_PSD_data = [[]]*len(PSD_data)
     # retain desired CHAN(s)
     for i, cond in enumerate(PSD_data):
-        for j, subj in enumerate(cond):
-            if CHAN != None:
-                PSD_data[i][j] = PSD_data[i][j][FREQ,CHAN,:]
-            else:
-                PSD_data[i][j] = PSD_data[i][j][FREQ,:,:]
+        if CHAN != None:
+            new_PSD_data[i] = PSD_data[i][SUBJ][FREQ,CHAN,:]
+        else:
+            new_PSD_data[i] = PSD_data[i][SUBJ][FREQ,:,:]
     X_list = []
     y_list = []
     groups_list = []
-    for i, cond in enumerate(PSD_data):
-        for j, subj in enumerate(cond):
-            X_list.append(subj)
-            if i == 0:
-                y_list.append(np.zeros(len(subj)))
-            elif i == 1:
-                y_list.append(np.ones(len(subj)))
-            groups_list.append(np.ones(len(subj))*j)
+    for i, cond in enumerate(new_PSD_data):
+        X_list.append(cond)
+        if i == 0:
+            y_list.append(np.zeros(len(cond)))
+        elif i == 1:
+            y_list.append(np.ones(len(cond)))
     X = np.concatenate((X_list), axis=0).reshape(-1, 1)
     y = np.concatenate((y_list), axis=0)
-    groups = np.concatenate((groups_list), axis=0)
 
-    return X, y, groups
+    return X, y
 
 def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     if Path(SAVEPATH).is_file():
         print(SAVEPATH + ' already exists.')
         return
     cv = ShuffleSplit(test_size=0.1, n_splits=10)
-    #cv = LeaveOneGroupOut()
+    #cv = LeaveOneGroupOut()sur une liste ?
     clf = LinearDiscriminantAnalysis()
     print(y.shape)
     results = classification(clf, cv, X.reshape(-1, 1), y, groups=None, perm=1001, n_jobs=-1)
@@ -79,7 +74,8 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
 def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
     with open(FEAT_FILE, 'rb') as fp:
         PSD_data = pickle.load(fp)
-    X, y, groups = prepare_data(FOLDERPATH, [SUBJ], BLOCS_LIST, FREQ, ZONE2575_CONDS, CHAN)
+
+    X, y, groups = prepare_data(PSD_data, [SUBJ], FREQ, CHAN)
     print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
     SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ, FREQ_NAME, CHAN)
     results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
@@ -97,7 +93,7 @@ if __name__ == "__main__":
         print('{} already exists.'.format(RESULTS_PATH))
 
     Parallel(n_jobs=-1)(
-        delayed(LDAsf)(SUBJ_LIST[SUBJ], CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES), range(SUBJ_LIST)))
+        delayed(LDAsf)(SUBJ_LIST[SUBJ], CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES)), range(len(SUBJ_LIST)))
     )
 
 #### Résultat on veut : elec * freq X trials(IN+OUT) = 1890 X N_trials_tot

@@ -76,8 +76,8 @@ def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):
     with open(FEAT_FILE, 'rb') as fp:
         PSD_data = pickle.load(fp)
     X, y = prepare_data(PSD_data, SUBJ, FREQ, CHAN)
-    print('Computing chan {} in {} band :'.format(CHAN, FREQ_NAME))
-    SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ_LIST[SUBJ], FREQ_NAME, CHAN)
+    print('Computing chan {} in {} band :'.format(CHAN, FREQS_NAMES[FREQ]))
+    SAVEPATH = '{}/classif_sub-{}_{}_{}.mat'.format(RESULTS_PATH, SUBJ_LIST[SUBJ], FREQS_NAMES[FREQ], CHAN)
     results = classif_intrasubj(X,y,FREQ, CHAN, SAVEPATH)
     savemat(SAVEPATH, results)
 

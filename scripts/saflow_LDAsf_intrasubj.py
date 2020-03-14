@@ -68,8 +68,8 @@ def classif_intrasubj(X,y, FREQ, CHAN, SAVEPATH):
     print(y.shape)
     results = classification(clf, cv, X.reshape(-1, 1), y, groups=None, perm=1001, n_jobs=-1)
     print('Done')
-    print('DA : ' + str(result['acc_score']))
-    print('p value : ' + str(result['acc_pvalue']))
+    print('DA : ' + str(results['acc_score']))
+    print('p value : ' + str(results['acc_pvalue']))
     return results
 
 def LDAsf(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH):

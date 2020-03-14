@@ -97,7 +97,7 @@ if __name__ == "__main__":
         print('{} already exists.'.format(RESULTS_PATH))
 
     Parallel(n_jobs=-1)(
-        delayed(LDAsf)(SUBJ, CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES), SUBJ_LIST))
+        delayed(LDAsf)(SUBJ_LIST[SUBJ], CHAN, FREQ, FEAT_FILE, RESULTS_PATH) for CHAN, FREQ, SUBJ in product(range(270), range(len(FREQS_NAMES), range(SUBJ_LIST)))
     )
 
 #### Résultat on veut : elec * freq X trials(IN+OUT) = 1890 X N_trials_tot

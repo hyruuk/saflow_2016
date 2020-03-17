@@ -232,6 +232,19 @@ def compute_PSD(epochs, sf, epochs_length, f=None):
     psds = objet_PSD.get(data)[0] # Ici on calcule la PSD !
     return psds
 
+def compute_TFR(epochs, baseline=True):
+    decim = 2
+    freqs = np.arange(2, 120, 1)  # define frequencies of interest
+    n_cycles = freqs / freqs[0]
+    zero_mean = False
+    this_tfr = mne.time_frequency.tfr_morlet(condition, freqs, n_cycles=n_cycles,
+                      decim=decim, average=False, zero_mean=zero_mean,
+                      return_itc=False)
+    if baseline:
+        this_tfr.apply_baseline(mode='ratio', baseline=(None, 0))
+    this_power = this_tfr.data[:, :, :, :]  # we only have one channel.
+    return this_power
+
 def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True, stage='PSD'):
     '''
     Returns a list containing n_subj lists of n_blocs matrices of shape n_freqs X n_channels X n_trials

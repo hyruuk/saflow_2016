@@ -17,7 +17,7 @@ def get_SAflow_bids(FOLDERPATH, subj, run, stage, cond=None):
         extension = '.fif.gz'
     elif 'PSD' in stage:
         extension = '.mat'
-    elif 'sources' in stage:
+    elif 'sources' in stage or 'TFR' in stage:
         extension = '.hd5'
     elif 'events' in stage:
         extension = '.tsv'

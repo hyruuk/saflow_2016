@@ -80,7 +80,7 @@ def LDAmf(FREQ, FEAT_FILE, RESULTS_PATH):
     SAVEPATH = '{}/classif_{}_mf.mat'.format(RESULTS_PATH, FREQS_NAMES[FREQ])
     savemat(SAVEPATH, results)
 
-FEAT_PATH = '../features/'
+FEAT_PATH = '/home/hyruuk/pCloudDrive/science/saflow/features/'
 FEAT_FILE = FEAT_PATH + args.features
 RESULTS_PATH = '../results/single_feat/LDAmf_L1SO_' + args.features
 

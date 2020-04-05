@@ -44,19 +44,27 @@ def prepare_data(PSD_data, FREQ, CHAN=None):
                 PSD_data[i][j] = PSD_data[i][j][FREQ,CHAN,:]
             else:
                 PSD_data[i][j] = PSD_data[i][j][FREQ,:,:]
-
     X_list = []
     y_list = []
     groups_list = []
     for i, cond in enumerate(PSD_data):
         for j, subj in enumerate(cond):
             X_list.append(subj)
+            if CHAN != None:
+                n_trials_subj = len(subj)
+            else:
+                n_trials_subj = subj.shape[1]
             if i == 0:
-                y_list.append(np.zeros(len(subj)))
+                y_list.append(np.zeros(n_trials_subj))
             elif i == 1:
-                y_list.append(np.ones(len(subj)))
-            groups_list.append(np.ones(len(subj))*j)
-    X = np.concatenate((X_list), axis=0).reshape(-1, 1)
+                y_list.append(np.ones(n_trials_subj))
+            groups_list.append(np.ones(n_trials_subj)*j)
+    if CHAN != None:
+        X = np.concatenate((X_list), axis=0).reshape(-1, 1)
+    else:
+        X = X_list[0]
+        for i in range(1,len(X_list)):
+            X = np.hstack((X, X_list[i]))
     y = np.concatenate((y_list), axis=0)
     groups = np.concatenate((groups_list), axis=0)
     return X, y, groups
@@ -75,14 +83,14 @@ def LDAmf(FREQ, FEAT_FILE, RESULTS_PATH):
         PSD_data = pickle.load(fp)
     X, y, groups = prepare_data(PSD_data, FREQ)
     print('Computing MF chans in {} band :'.format(FREQS_NAMES[FREQ]))
-    results = classif_singlefeat(X,y,groups)
+    results = classif_singlefeat(X.T,y,groups)
     print(results)
     SAVEPATH = '{}/classif_{}_mf.mat'.format(RESULTS_PATH, FREQS_NAMES[FREQ])
     savemat(SAVEPATH, results)
 
 FEAT_PATH = '/home/hyruuk/pCloudDrive/science/saflow/features/'
 FEAT_FILE = FEAT_PATH + args.features
-RESULTS_PATH = '../results/single_feat/LDAmf_L1SO_' + args.features
+RESULTS_PATH = '../results/multi_feat/LDAmf_L1SO_' + args.features
 
 
 if __name__ == "__main__":

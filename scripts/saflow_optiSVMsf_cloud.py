@@ -71,9 +71,6 @@ def prepare_data(PSD_data, FREQ, CHAN=None, norm=True):
     return X, y, groups
 
 
-# TODO : normalize data per each subject : z transform train data, then transform test data with mean and std of train
-
-
 def classif_singlefeat(X,y,groups, FREQ, CHAN):
     cv = LeaveOneGroupOut()
     inner_cv = LeaveOneGroupOut()

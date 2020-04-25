@@ -6,7 +6,6 @@ from saflow_params import FOLDERPATH, IMG_DIR, FREQS, SUBJ_LIST, BLOCS_LIST
 from brainpipe import feature
 from scipy.io import savemat
 
-
 ### OPEN SEGMENTED FILES AND COMPUTE PSDS
 if __name__ == "__main__":
     for subj in SUBJ_LIST:

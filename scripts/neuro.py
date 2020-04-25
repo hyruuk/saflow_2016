@@ -100,7 +100,7 @@ def segment_files(bids_filepath, tmin=0, tmax=0.8):
     baseline = (None, -0.05)
     reject = {'mag': 4e-12}
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
-    event_id = {'Freq': 21, 'Rare': 31, 'Resp': 99}
+    event_id = {'Freq': 21, 'Rare': 31}
     epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
                     tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
     ar = AutoReject(n_jobs=-1)
@@ -112,6 +112,8 @@ def split_events_by_VTC(INzone, OUTzone, events):
     '''
     This function uses the event IDs in INzone and OUTzone variables and splits
     MNE events (ndarray of shape 3 X n_events)
+    HERE WE KEEP ONLY CORRECT TRIALS
+    Donc ici on a les 599 (?) events moins les erreurs
     '''
     INevents = []
     OUTevents = []
@@ -169,16 +171,15 @@ def split_events_by_VTC_alltrials(INzone, OUTzone, events):
     OUTevents = np.asarray(OUTevents)
     return INevents, OUTevents
 
-def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs=False, filt_order=3, filt_cutoff=0.05):
+def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None, save_epochs=False, filt_order=3, filt_cutoff=0.05):
     '''
     This functions allows to use the logfile to split the epochs obtained in the epo.fif file.
     It works by comparing the timestamps of IN and OUT events to the timestamps in the epo file events
     It returns IN and OUT indices that are to be used in the split_PSD_data function
-    HERE WE KEEP ONLY CORRECT TRIALS
 
     TODO : FIND A WAY TO EARN TIME BY NOT LOADING THE DATA BUT JUST THE EVENTS
     '''
-    epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond=None)
+    epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage, cond=None)
     epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
     ### Find logfile to extract VTC
     log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
@@ -188,6 +189,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
     raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
     events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
     INevents, OUTevents = split_events_by_VTC(INzone, OUTzone, events)
+    print(len(INevents)+len(OUTevents))
     INidx = []
     OUTidx = []
     # the droping of epochs is a bit confused because we have to get indices from the current cleaned epochs file
@@ -198,6 +200,14 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
             OUTidx.append(idx)
     INidx = np.array(INidx)
     OUTidx = np.array(OUTidx)
+
+    # Obtain VTC of each conserved trial
+    VTC_epo = []
+
+    for idx, ev in enumerate(events):
+        if ev[0] in epo_events[:,0]:
+            VTC_epo.append(VTC[idx])
+    VTC_epo = np.array(VTC_epo)
 
     if save_epochs == True:
         epo_idx = np.array(range(len(epo_events)))
@@ -218,7 +228,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=None, hibound=None, save_epochs
         INepochs.save(INfilename)
         OUTepochs.save(OUTfilename)
 
-    return INidx, OUTidx
+    return INidx, OUTidx, VTC_epo
 
 def compute_PSD(epochs, sf, epochs_length, f=None):
     if f == None:
@@ -232,18 +242,22 @@ def compute_PSD(epochs, sf, epochs_length, f=None):
     psds = objet_PSD.get(data)[0] # Ici on calcule la PSD !
     return psds
 
-def compute_TFR(epochs, baseline=True):
-    decim = 2
-    freqs = np.arange(2, 120, 1)  # define frequencies of interest
+def compute_TFR(epochs, baseline=False):
+    decim = 3
+    fmin = 2
+    fmax = 150
+    n_bins=30
+    freqs = np.logspace(*np.log10([fmin, fmax]), num=n_bins)
+    #freqs = np.arange(2,15,1)  # define frequencies of interest
     n_cycles = freqs / freqs[0]
     zero_mean = False
-    this_tfr = mne.time_frequency.tfr_morlet(condition, freqs, n_cycles=n_cycles,
+    this_tfr = mne.time_frequency.tfr_morlet(epochs, freqs, n_cycles=n_cycles,
                       decim=decim, average=False, zero_mean=zero_mean,
                       return_itc=False)
     if baseline:
-        this_tfr.apply_baseline(mode='ratio', baseline=(None, 0))
-    this_power = this_tfr.data[:, :, :, :]  # we only have one channel.
-    return this_power
+        this_tfr.apply_baseline(mode='ratio', baseline=(None, -0.05))
+    #this_power = this_tfr.data[:, :, :, :]  # we only have one channel.
+    return this_tfr
 
 def load_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, time_avg=True, stage='PSD'):
     '''
@@ -281,10 +295,6 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
             # compute VTC for all trials
             log_file = find_logfile(subj,run,os.listdir(LOGS_DIR))
             VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=None, hibound=None)
-            print(len(VTC))
-            print(log_file)
-            print(len(all_events))
-            print(events_fname)
             epochs_VTC = []
             for event_time in events_epoched[:,0]:
                 idx = list(all_events[:,0]).index(event_time)
@@ -292,6 +302,22 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
             all_subj.append(np.array(epochs_VTC))
         VTC_alldata.append(all_subj)
     return VTC_alldata
+
+def split_TFR(filepath, subj, bloc, by='VTC', lobound=None, hibound=None, stage='1600TFR', filt_order=3, filt_cutoff=0.05):
+    if by == 'VTC':
+        event_id = {'IN': 1, 'OUT': 0}
+        INidx, OUTidx = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
+        epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage[:-3]+'epo', cond=None)
+        epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
+        TFR_path, TFR_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600TFR', cond=None)
+        TFR = mne.time_frequency.read_tfrs(TFR_filename)
+        for i, event in enumerate(epo_events):
+            if i in INidx:
+                TFR[0].events[i,2] = 1
+            if i in OUTidx:
+                TFR[0].events[i,2] = 0
+        TFR[0].event_id = event_id
+    return TFR
 
 def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD', filt_order=3, filt_cutoff=0.05):
     '''

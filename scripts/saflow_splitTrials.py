@@ -5,8 +5,8 @@ from scipy.io import savemat
 import pickle
 
 if __name__ == "__main__":
-    PSD_alldata = split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD', filt_order=3, filt_cutoff=0.1)
+    PSD_alldata = split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='1600PSD', filt_order=3, filt_cutoff=0.1)
     PSD_dict = {'PSD_alldata': PSD_alldata}
 
-    with open(FEAT_PATH + 'PSD_VTCo3c01', 'wb') as fp:
+    with open(FEAT_PATH + '1600PSD_VTCo3c01', 'wb') as fp:
         pickle.dump(PSD_alldata, fp)

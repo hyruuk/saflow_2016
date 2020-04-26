@@ -97,9 +97,9 @@ def segment_files(bids_filepath, tmin=0, tmax=0.8):
     raw = read_raw_fif(bids_filepath, preload=True)
     picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
     ### Set some constants for epoching
-    baseline = (None, -0.05)
+    baseline = None #(None, -0.05)
     reject = {'mag': 4e-12}
-    events = mne.find_events(raw, min_duration=2/raw.info['sfreq'])
+    events = mne.find_events(raw, min_duration=1/raw.info['sfreq'])
     event_id = {'Freq': 21, 'Rare': 31}
     epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
                     tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
@@ -108,70 +108,78 @@ def segment_files(bids_filepath, tmin=0, tmax=0.8):
     return epochs_clean, autoreject_log
 
 
-def split_events_by_VTC(INzone, OUTzone, events):
+def remove_errors(logfile, events):
     '''
-    This function uses the event IDs in INzone and OUTzone variables and splits
-    MNE events (ndarray of shape 3 X n_events)
-    HERE WE KEEP ONLY CORRECT TRIALS
-    Donc ici on a les 599 (?) events moins les erreurs
+    Takes as input the raw events, including both stimuli and responses.
+    Outputs an event vector containing only the correct trials, and indices of their position in the list
+    of all stims
+    '''
+
+    # load RT vector
+    data = loadmat(logfile)
+    df_response = pd.DataFrame(data['response'])
+    RT_array= np.asarray(df_response.loc[:,4])
+
+    # get events vector with only stimuli events
+    new_events = []
+    for ev in events:
+        if ev[2] != 99:
+            new_events.append(ev)
+    events = np.array(new_events)
+
+    # check for each trial if it has a response or not
+    idx_noerr = []
+    events_noerr = []
+    for idx, event in enumerate(events):
+        if event[2] == 21:
+            if RT_array[idx] != 0:
+                events_noerr.append(event)
+                idx_noerr.append(idx)
+        if event[2] == 31:
+            if RT_array[idx] == 0:
+                events_noerr.append(event)
+                idx_noerr.append(idx)
+    events_noerr = np.array(events_noerr)
+    idx_noerr = np.array(idx_noerr)
+    return events_noerr, idx_noerr
+
+def trim_events(events_noerr, idx_noerr, events_artrej):
+    '''
+    This function compares the events vectors of correct epochs (events_noerr)
+    and of kept epochs after auto-reject (events_artrej).
+    Returns a list of intersecting epochs, + their idx based on the full list of stimuli
+    '''
+    events_trimmed = []
+    idx_trimmed = []
+    for idx, event in enumerate(events_noerr):
+        if event in events_artrej:
+            events_trimmed.append(event)
+            idx_trimmed.append(idx_noerr[idx])
+
+    events_trimmed = np.array(events_trimmed)
+    idx_trimmed = np.array(idx_trimmed)
+    return events_trimmed, idx_trimmed
+
+
+def splitEpochs_by_VTC(INidx, OUTidx, idx_trimmed, events_trimmed):
+    '''
+    This function compares the idx_trimmed (no errors, no artifacts) with the idx splitted by VTC.
+    Returns a list of events for each condition, + the VTC of each final epochs (same length as idx/events_trimmed)
     '''
     INevents = []
     OUTevents = []
-    counter = 0
-    for i, event in enumerate(events):
-        if event[2] == 21:
-            try:
-                if events[i+1][2] == 99:
-                    if counter in INzone:
-                        INevents.append(event)
-                    if counter in OUTzone:
-                        OUTevents.append(event)
-            except:
-                print('last event')
-            counter += 1
-        elif event[2] == 31:
-            try:
-                if events[i+1][2] != 99:
-                    if counter in INzone:
-                        INevents.append(event)
-                    if counter in OUTzone:
-                        OUTevents.append(event)
-            except:
-                print('last event')
-            counter += 1
-    INevents = np.asarray(INevents)
-    OUTevents = np.asarray(OUTevents)
+    for idx, ori_idx in enumerate(idx_trimmed):
+        if ori_idx in INidx:
+            INevents.append(events_trimmed[idx])
+        if ori_idx in OUTidx:
+            OUTevents.append(events_trimmed[idx])
+    INevents = np.array(INevents)
+    OUTevents = np.array(OUTevents)
+
     return INevents, OUTevents
 
-def split_events_by_VTC_alltrials(INzone, OUTzone, events):
-    ### keeps all trials, miss included
-    INevents = []
-    OUTevents = []
-    counter = 0
-    for i, event in enumerate(events):
-        if event[2] == 21:
-            try:
-                if counter in INzone:
-                    INevents.append(event)
-                if counter in OUTzone:
-                    OUTevents.append(event)
-            except:
-                print('last event')
-            counter += 1
-        elif event[2] == 31:
-            try:
-                if counter in INzone:
-                    INevents.append(event)
-                if counter in OUTzone:
-                    OUTevents.append(event)
-            except:
-                print('last event')
-            counter += 1
-    INevents = np.asarray(INevents)
-    OUTevents = np.asarray(OUTevents)
-    return INevents, OUTevents
 
-def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None, save_epochs=False, filt_order=3, filt_cutoff=0.05):
+def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None, save_epochs=False, filt_order=3, filt_cutoff=0.1):
     '''
     This functions allows to use the logfile to split the epochs obtained in the epo.fif file.
     It works by comparing the timestamps of IN and OUT events to the timestamps in the epo file events
@@ -179,54 +187,24 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None
 
     TODO : FIND A WAY TO EARN TIME BY NOT LOADING THE DATA BUT JUST THE EVENTS
     '''
+
+    ### Get events after artifact rejection have been performed
     epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage, cond=None)
-    epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
+    events_artrej = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
+
     ### Find logfile to extract VTC
     log_file = find_logfile(subj,bloc,os.listdir(LOGS_DIR))
-    VTC, INbounds, OUTbounds, INzone, OUTzone = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound, filt=True, filt_order=filt_order, filt_cutoff=filt_cutoff)
-    ### Find events, split them by IN/OUT and start epoching
+    VTC, INbounds, OUTbounds, INidx, OUTidx, RT_array = get_VTC_from_file(LOGS_DIR + log_file, lobound=lobound, hibound=hibound, filt=True, filt_order=filt_order, filt_cutoff=filt_cutoff)
+
+    ### Get original events and split them using the VTC
     events_fname, events_fpath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='preproc_raw', cond=None)
     raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
-    events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
-    INevents, OUTevents = split_events_by_VTC(INzone, OUTzone, events)
-    print(len(INevents)+len(OUTevents))
-    INidx = []
-    OUTidx = []
-    # the droping of epochs is a bit confused because we have to get indices from the current cleaned epochs file
-    for idx, ev in enumerate(epo_events):
-        if ev[0] in INevents[:,0]: #compare timestamps
-            INidx.append(idx)
-        if ev[0] in OUTevents[:,0]:
-            OUTidx.append(idx)
-    INidx = np.array(INidx)
-    OUTidx = np.array(OUTidx)
+    events = mne.find_events(raw, min_duration=1/raw.info['sfreq'], verbose=False)
 
-    # Obtain VTC of each conserved trial
-    VTC_epo = []
+    events_noerr, idx_noerr = remove_errors(logfile, events)
+    events_trimmed, idx_trimmed = trim_events(events_noerr, idx_noerr, events_artrej)
 
-    for idx, ev in enumerate(events):
-        if ev[0] in epo_events[:,0]:
-            VTC_epo.append(VTC[idx])
-    VTC_epo = np.array(VTC_epo)
-
-    if save_epochs == True:
-        epo_idx = np.array(range(len(epo_events)))
-        IN_todrop = np.delete(epo_idx, INidx) # drop all epochs EXCEPT INidx
-        OUT_todrop = np.delete(epo_idx, OUTidx)
-        INepochs = mne.read_epochs(epo_filename, preload=False, verbose=False)
-        INepochs = INepochs.drop(indices=IN_todrop)
-        OUTepochs = mne.read_epochs(epo_filename, preload=False, verbose=False)
-        OUTepochs = OUTepochs.drop(indices=OUT_todrop)
-        if lobound == None:
-            INpath, INfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='IN')
-        else:
-            INpath, INfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='IN{}'.format(lobound*100))
-        if hibound == None:
-            OUTpath, OUTfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='OUT')
-        else:
-            OUTpath, OUTfilename = get_SAflow_bids(FOLDERPATH, subj, bloc, 'epo', cond='OUT{}'.format(hibound*100))
-        INepochs.save(INfilename)
-        OUTepochs.save(OUTfilename)
+    VTC_epo = np.array([VTC[idx] for idx in idx_trimmed])
 
     return INidx, OUTidx, VTC_epo
 

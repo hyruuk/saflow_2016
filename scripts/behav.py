@@ -97,13 +97,14 @@ def find_bounds(array):
 def get_VTC_from_file(filepath, lobound=None, hibound=None, filt=True, filt_order=3, filt_cutoff=0.05):
     data = loadmat(filepath)
     df_response = pd.DataFrame(data['response'])
+    df_response = df_response[:-1]
     RT_array= np.asarray(df_response.loc[:,4])
     RT_interp = interp_RT(RT_array)
     VTC = compute_VTC(RT_interp, filt=filt, filt_order=filt_order, filt_cutoff=filt_cutoff)
     INzone, OUTzone = in_out_zone(VTC, lobound=lobound, hibound=hibound)
     INbounds = find_bounds(INzone)
     OUTbounds = find_bounds(OUTzone)
-    return VTC, INbounds, OUTbounds, INzone, OUTzone
+    return VTC, INbounds, OUTbounds, INzone, OUTzone, RT_array
 
 def plot_VTC(VTC, figpath=None, save=False, INOUT=True):
     x = np.arange(0, len(VTC))

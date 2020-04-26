@@ -310,7 +310,7 @@ def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hi
         for bloc_idx, bloc in enumerate(BLOCS_LIST):
             print('Splitting sub-{}_run-{}'.format(subj, bloc))
             if by == 'VTC':
-                INidx, OUTidx = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
+                INidx, OUTidx, VTC_epochs = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
                 cond1_idx = INidx
                 cond2_idx = OUTidx
             if bloc_idx == 0: # if first bloc, init ndarray size using the first matrix

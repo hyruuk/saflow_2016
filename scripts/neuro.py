@@ -284,7 +284,7 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
 def split_TFR(filepath, subj, bloc, by='VTC', lobound=None, hibound=None, stage='1600TFR', filt_order=3, filt_cutoff=0.05):
     if by == 'VTC':
         event_id = {'IN': 1, 'OUT': 0}
-        INidx, OUTidx = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
+        INidx, OUTidx, VTC_epochs = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
         epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage[:-3]+'epo', cond=None)
         epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
         TFR_path, TFR_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600TFR', cond=None)

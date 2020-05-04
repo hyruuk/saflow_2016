@@ -10,8 +10,8 @@ from scipy.io import savemat
 if __name__ == "__main__":
     for subj in SUBJ_LIST:
         for bloc in BLOCS_LIST:
-            SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600epo', cond=None)
+            SAflow_bidsname, SAflow_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='epo', cond=None)
             data = mne.read_epochs(SAflow_bidspath)
-            psds = compute_PSD(data, data.info['sfreq'], epochs_length = 1.6, f=FREQS)
-            PSD_bidsname, PSD_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600PSD', cond=None)
+            psds = compute_PSD(data, data.info['sfreq'], epochs_length = 0.8, f=FREQS)
+            PSD_bidsname, PSD_bidspath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='PSD', cond=None)
             savemat(PSD_bidspath, {'PSD': psds})

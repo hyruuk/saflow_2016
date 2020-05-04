@@ -13,7 +13,7 @@ import pickle
 
 
 ALPHA = 0.05
-filename = 'PSD_VTCo3c012575'
+filename = 'PSD_VTC'
 
 def compute_reldiff(A, B):
     A_avg = np.mean(A, axis=0)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
                     showtitle=True,
                     titles=FREQS_NAMES,
                     savefig=True,
-                    figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat.png'.format(filename,str(ALPHA)[2:]),
+                    figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat_newev.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                     showtitle=True,
                     titles=FREQS_NAMES,
                     savefig=True,
-                    figpath=IMG_DIR + '{}_reldiff_12subj.png'.format(filename,str(ALPHA)[2:]),
+                    figpath=IMG_DIR + '{}_reldiff_12subj_newev.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',

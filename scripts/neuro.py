@@ -156,12 +156,16 @@ def trim_events(events_noerr, idx_noerr, events_artrej):
     events_trimmed = []
     idx_trimmed = []
     for idx, event in enumerate(events_artrej):
-        if event in events_noerr:
+        if event[0] in events_noerr[:,0]:
             events_trimmed.append(event)
             idx_trimmed.append(idx)
 
     events_trimmed = np.array(events_trimmed)
     idx_trimmed = np.array(idx_trimmed)
+
+    print('N events in clean epochs : {}'.format(len(events_artrej)))
+    print('N events in correct epochs : {}'.format(len(events_noerr)))
+    print('N events in intersection : {}'.format(len(idx_trimmed)))
     return events_trimmed, idx_trimmed
 
 
@@ -226,7 +230,7 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None
 
     VTC_epo = np.array([VTC[idx] for idx in idx_trimmed])
 
-    return INidx, OUTidx, VTC_epo
+    return INidx, OUTidx, VTC_epo, idx_trimmed
 
 def compute_PSD(epochs, sf, epochs_length, f=None):
     if f == None:
@@ -304,7 +308,7 @@ def load_VTC_data(FOLDERPATH, LOGS_DIR, SUBJ_LIST, BLOCS_LIST):
 def split_TFR(filepath, subj, bloc, by='VTC', lobound=None, hibound=None, stage='1600TFR', filt_order=3, filt_cutoff=0.05):
     if by == 'VTC':
         event_id = {'IN': 1, 'OUT': 0}
-        INidx, OUTidx, VTC_epochs = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
+        INidx, OUTidx, VTC_epochs, idx_trimmed = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
         epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage[:-3]+'epo', cond=None)
         epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
         TFR_path, TFR_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600TFR', cond=None)
@@ -330,7 +334,7 @@ def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hi
         for bloc_idx, bloc in enumerate(BLOCS_LIST):
             print('Splitting sub-{}_run-{}'.format(subj, bloc))
             if by == 'VTC':
-                INidx, OUTidx, VTC_epochs = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
+                INidx, OUTidx, VTC_epochs, idx_trimmed = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
                 cond1_idx = INidx
                 cond2_idx = OUTidx
             if bloc_idx == 0: # if first bloc, init ndarray size using the first matrix

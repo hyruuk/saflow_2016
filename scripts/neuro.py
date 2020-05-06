@@ -132,22 +132,31 @@ def remove_errors(logfile, events):
     events = np.array(new_events)
 
     # check for each trial if it has a response or not
-    idx_noerr = []
     events_noerr = []
+
+    events_comerr = []
+    events_omerr = []
+
     for idx, event in enumerate(events):
         if event[2] == 21:
             if RT_array[idx] != 0:
                 events_noerr.append(event)
                 idx_noerr.append(idx)
+            else:
+                events_omerr.append(event)
         if event[2] == 31:
             if RT_array[idx] == 0:
                 events_noerr.append(event)
                 idx_noerr.append(idx)
+            else:
+                events_comerr.append(event)
     events_noerr = np.array(events_noerr)
-    idx_noerr = np.array(idx_noerr)
-    return events_noerr, idx_noerr
+    events_comerr = np.array(events_comerr)
+    events_omerr = np.array(events_omerr)
 
-def trim_events(events_noerr, idx_noerr, events_artrej):
+    return events_noerr, events_comerr, events_omerr
+
+def trim_events(events_noerr, events_artrej):
     '''
     This function compares the events vectors of correct epochs (events_noerr)
     and of kept epochs after auto-reject (events_artrej).
@@ -222,8 +231,8 @@ def get_VTC_epochs(LOGS_DIR, subj, bloc, stage='epo', lobound=None, hibound=None
     except ValueError:
         events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
 
-    events_noerr, idx_noerr = remove_errors(log_file, events)
-    events_trimmed, idx_trimmed = trim_events(events_noerr, idx_noerr, events_artrej)
+    events_noerr, events_comerr, events_omerr = remove_errors(log_file, events)
+    events_trimmed, idx_trimmed = trim_events(events_noerr, events_artrej)
     #rewrite INidx and OUTidx
     INidx, OUTidx = trim_INOUT_idx(INidx, OUTidx, events_trimmed, events)
 
@@ -311,7 +320,7 @@ def split_TFR(filepath, subj, bloc, by='VTC', lobound=None, hibound=None, stage=
         INidx, OUTidx, VTC_epochs, idx_trimmed = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, stage=stage[:-3]+'epo', save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
         epo_path, epo_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage[:-3]+'epo', cond=None)
         epo_events = mne.read_events(epo_filename, verbose=False) # get events from the epochs file (so no resp event)
-        TFR_path, TFR_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='1600TFR', cond=None)
+        TFR_path, TFR_filename = get_SAflow_bids(FOLDERPATH, subj, bloc, stage=stage, cond=None)
         TFR = mne.time_frequency.read_tfrs(TFR_filename)
         for i, event in enumerate(epo_events):
             if i in INidx:
@@ -321,7 +330,7 @@ def split_TFR(filepath, subj, bloc, by='VTC', lobound=None, hibound=None, stage=
         TFR[0].event_id = event_id
     return TFR
 
-def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD', filt_order=3, filt_cutoff=0.05):
+def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hibound=None, stage='PSD', filt_order=3, filt_cutoff=0.1):
     '''
     This func splits the PSD data into two conditions. It returns a list of 2 (cond1 and cond2), each containing a list of n_subject matrices of shape n_freqs X n_channels X n_trials
     '''
@@ -333,10 +342,40 @@ def split_PSD_data(FOLDERPATH, SUBJ_LIST, BLOCS_LIST, by='VTC', lobound=None, hi
         subj_cond2 = []
         for bloc_idx, bloc in enumerate(BLOCS_LIST):
             print('Splitting sub-{}_run-{}'.format(subj, bloc))
+
+            # Obtain indices of the two conditions
             if by == 'VTC':
                 INidx, OUTidx, VTC_epochs, idx_trimmed = get_VTC_epochs(LOGS_DIR, subj, bloc, lobound=lobound, hibound=hibound, save_epochs=False, filt_order=filt_order, filt_cutoff=filt_cutoff)
                 cond1_idx = INidx
                 cond2_idx = OUTidx
+            if by == 'odd':
+                # Get indices of freq and rare events
+                ev_fname, ev_fpath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='epo')
+                events_artrej = mne.read_events(ev_fpath)
+                log_file = LOGS_DIR + find_logfile(subj,bloc,os.listdir(LOGS_DIR))
+                events_fname, events_fpath = get_SAflow_bids(FOLDERPATH, subj, bloc, stage='preproc_raw', cond=None)
+                raw = read_raw_fif(events_fpath, preload=False, verbose=False)#, min_duration=2/epochs.info['sfreq'])
+                try:
+                    events = mne.find_events(raw, min_duration=1/raw.info['sfreq'], verbose=False)
+                except ValueError:
+                    events = mne.find_events(raw, min_duration=2/raw.info['sfreq'], verbose=False)
+
+                events_noerr, events_comerr, events_omerr = remove_errors(log_file, events)
+                events_trimmed, idx_trimmed = trim_events(events_noerr, events_artrej)
+                cond1_idx = []
+                cond2_idx = []
+                for idx, ev in enumerate(events_trimmed):
+                    if ev[2] == 21: # Frequent events
+                        cond1_idx.append(idx)
+                    if ev[2] == 31:
+                        cond2_idx.append(idx)
+                cond1_idx = np.array(cond1_idx)
+                cond2_idx = np.array(cond2_idx)
+                # Add this to keep the same number of trials in both conditions
+                random.seed(0)
+                cond1_idx = random.choices(cond1_idx, k=len(cond2_idx))
+                print('N trials retained for each condition : {}'.format(len(cond2_idx)))
+            # Pick the data of each condition
             if bloc_idx == 0: # if first bloc, init ndarray size using the first matrix
                 subj_cond1 = PSD_alldata[subj_idx][bloc_idx][:,:,cond1_idx]
                 subj_cond2 = PSD_alldata[subj_idx][bloc_idx][:,:,cond2_idx]

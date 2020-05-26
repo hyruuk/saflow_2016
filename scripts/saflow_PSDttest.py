@@ -13,7 +13,7 @@ import pickle
 
 
 ALPHA = 0.05
-filename = 'PSD_VTC'
+filename = 'PSD_VTC2575'
 
 def compute_reldiff(A, B):
     A_avg = np.mean(A, axis=0)

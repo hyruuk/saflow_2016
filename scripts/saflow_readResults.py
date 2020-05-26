@@ -30,7 +30,7 @@ args = parser.parse_args()
 CONDITION = args.condition
 ALPHA = args.alpha
 
-RESULTS_PATH = '/home/hyruuk/pCloudDrive/science/saflow/results/single_feat/' + CONDITION
+RESULTS_PATH = '/home/karim/pCloudDrive/science/saflow/results/single_feat/' + CONDITION
 FREQ_BANDS = FREQS_NAMES
 
 if __name__ == "__main__":

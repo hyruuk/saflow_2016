@@ -1,7 +1,9 @@
 import os.path as op
 
 FOLDERPATH = '/storage/Yann/saflow_DATA/saflow_bids/'
+RESULTS_PATH = '/home/karim/pCloudDrive/science/saflow/results/single_feat/'
 IMG_DIR = '/home/karim/pCloudDrive/science/saflow/images/'
+CH_FILE = '/home/karim/pCloudDrive/science/saflow/sub-04_ses-recording_task-gradCPT_run-02_meg.ds'
 LOGS_DIR = '/home/karim/pCloudDrive/science/saflow/gradCPT/gradCPT_share_Mac_PC/gradCPT_share_Mac_PC/saflow_data/'
 REPORTS_PATH = op.join(FOLDERPATH, 'preproc_reports')
 FEAT_PATH = FOLDERPATH + 'features/'
@@ -11,3 +13,4 @@ SUBJ_LIST = ['04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '
 BLOCS_LIST = ['2','3', '4', '5', '6', '7']
 ZONE_CONDS = ['IN', 'OUT']
 ZONE2575_CONDS = ['IN25', 'OUT75']
+FS_SUBJDIR = '/storage/Yann/saflow_DATA/saflow_anat/'

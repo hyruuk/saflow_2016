@@ -2,12 +2,11 @@ from scipy.io import loadmat
 import numpy as np
 from mne.io import read_raw_ctf
 from saflow_utils import array_topoplot, get_ch_pos, create_pval_mask
-from saflow_params import IMG_DIR, SUBJ_LIST
+from saflow_params import IMG_DIR, SUBJ_LIST, RESULTS_PATH, FREQS_NAMES
 import itertools
 from mlneurotools.stats import compute_pval
 
-RESULTS_PATH = '/storage/Yann/saflow_DATA/saflow_bids/ML_results/single_feat/LDAsf_intrasubj_K10_2575'
-FREQ_BANDS = ['theta','alpha','lobeta', 'hibeta', 'gamma1','gamma2','gamma3']
+RESULTS_PATH = RESULTS_PATH + 'LDA_singlesubj_L1SO_PSD_VTC2575'
 MODEL = 'LDA'
 NPERM = 1001
 CV = '10FOLD'
@@ -24,7 +23,7 @@ if __name__ == "__main__":
         all_acc = []
         all_pval = []
         all_masks = []
-        for FREQ in FREQ_BANDS:
+        for FREQ in FREQS_NAMES:
             freq_acc = []
             freq_pval = []
             freq_perms_acc = []
@@ -49,4 +48,4 @@ if __name__ == "__main__":
         toplot = all_acc
         vmax = np.max(np.max(np.asarray(toplot)))
         vmin = np.min(np.min(np.asarray(toplot)))
-        array_topoplot(toplot, ch_xy, show=False, showtitle=True, titles=FREQ_BANDS, savefig=True, figpath=IMG_DIR + '{}_{}perm_{}_sub-{}_{}.png'.format(MODEL, NPERM, CV, SUBJ, COND) ,vmin=vmin, vmax=vmax, with_mask=True, masks=all_masks)
+        array_topoplot(toplot, ch_xy, show=False, showtitle=True, titles=FREQS_NAMES, savefig=True, figpath=IMG_DIR + '{}_{}perm_{}_sub-{}_{}.png'.format(MODEL, NPERM, CV, SUBJ, COND) ,vmin=vmin, vmax=vmax, with_mask=True, masks=all_masks)

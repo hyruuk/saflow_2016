@@ -10,6 +10,7 @@ from mne.io import read_raw_fif, read_raw_ctf
 from hytools.meg_utils import get_ch_pos
 from utils import get_SAflow_bids
 from behav import find_logfile, get_VTC_from_file
+import random
 
 def find_rawfile(subj, bloc, BIDS_PATH):
     filepath = '/sub-{}/ses-recording/meg/'.format(subj)
@@ -141,13 +142,11 @@ def remove_errors(logfile, events):
         if event[2] == 21:
             if RT_array[idx] != 0:
                 events_noerr.append(event)
-                idx_noerr.append(idx)
             else:
                 events_omerr.append(event)
         if event[2] == 31:
             if RT_array[idx] == 0:
                 events_noerr.append(event)
-                idx_noerr.append(idx)
             else:
                 events_comerr.append(event)
     events_noerr = np.array(events_noerr)

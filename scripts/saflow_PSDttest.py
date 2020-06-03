@@ -13,7 +13,7 @@ import pickle
 
 
 ALPHA = 0.05
-filename = 'PSD_VTC2575'
+filename = 'PSD_oddball'
 
 def compute_reldiff(A, B):
     A_avg = np.mean(A, axis=0)
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # load PSD data
     with open(FEAT_PATH + filename, 'rb') as fp:
         PSD_alldata = pickle.load(fp)
-
+    #print(PSD_alldata[1].shape)
     # average across trials
     for cond in range(len(PSD_alldata)):
         for subj in range(len(PSD_alldata[0])):
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     pvalues = []
     for i, freq in enumerate(FREQS_NAMES):
         tvals, pvals = ttest_perm(PSD_alldata[0][:,i,:], PSD_alldata[1][:,i,:], # cond1 = IN, cond2 = OUT
-        n_perm=10000,
+        n_perm=1000,
         n_jobs=-1,
         correction='maxstat',
         paired=True,
@@ -66,7 +66,7 @@ if __name__ == "__main__":
                     showtitle=True,
                     titles=FREQS_NAMES,
                     savefig=True,
-                    figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat_newev.png'.format(filename,str(ALPHA)[2:]),
+                    figpath=IMG_DIR + '{}_tvals_12subj_A{}_maxstat_oddball.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                     showtitle=True,
                     titles=FREQS_NAMES,
                     savefig=True,
-                    figpath=IMG_DIR + '{}_reldiff_12subj_newev.png'.format(filename,str(ALPHA)[2:]),
+                    figpath=IMG_DIR + '{}_reldiff_12subj_oddball.png'.format(filename,str(ALPHA)[2:]),
                     vmin=vmin,
                     vmax=vmax,
                     cmap='coolwarm',

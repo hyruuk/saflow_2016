@@ -22,14 +22,18 @@ recording_folders = os.listdir(ACQ_PATH)
 
 # loop across recording folders (folder containing the recordings of the day)
 for rec_date in recording_folders: # folders are named by date in format YYYYMMDD
-    for file in os.listdir(op.join(ACQ_PATH, rec_date)):
+    filelist = os.listdir(op.join(ACQ_PATH, rec_date))
+    subjects_in_folder = np.unique([filename[2:4] for filename in filelist if 'SA' in filename])
+    for file in filelist:
         # Create emptyroom BIDS if doesn't exist already
         if 'NOISE_noise' in file:
-            if not op.isdir(op.join(BIDS_PATH, 'sub-emptyroom', 'ses-{}'.format(rec_date))):
-                er_bids_basename = make_bids_basename(subject='emptyroom', session=rec_date)
-                er_raw_fname = op.join(ACQ_PATH, rec_date, file)
-                er_raw = mne.io.read_raw_ctf(er_raw_fname)
-                write_raw_bids(er_raw, er_bids_basename, BIDS_PATH)
+            for sub in subjects_in_folder:
+                noise_basename = 'sub-{}_ses-recording_NOISE'.format(sub)
+                if not op.isdir(op.join(BIDS_PATH, 'sub-{}'.format(sub), 'ses-recording', 'meg', noise_basename)):
+                    er_bids_basename = make_bids_basename(subject='emptyroom', session=rec_date)
+                    er_raw_fname = op.join(ACQ_PATH, rec_date, file)
+                    er_raw = mne.io.read_raw_ctf(er_raw_fname)
+                    write_raw_bids(er_raw, noise_basename, BIDS_PATH)
         # Rewrite in BIDS format if doesn't exist yet
         if 'SA' in file and '.ds' in file and not 'procedure' in file:
             subject = file[2:4]

@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import mne
+from mne.preprocessing import ICA, create_ecg_epochs, create_eog_epochs
 from autoreject import AutoReject
 from scipy.io import loadmat, savemat
 from brainpipe import feature
@@ -11,6 +12,7 @@ from hytools.meg_utils import get_ch_pos
 from utils import get_SAflow_bids
 from behav import find_logfile, get_VTC_from_file
 import random
+from matplotlib.pyplot import close
 
 def find_rawfile(subj, bloc, BIDS_PATH):
     filepath = '/sub-{}/ses-recording/meg/'.format(subj)
@@ -22,14 +24,15 @@ def find_rawfile(subj, bloc, BIDS_PATH):
 
 def saflow_preproc(filepath, savepath, reportpath):
     report = mne.Report(verbose=True)
-    raw_data = read_raw_ctf(filepath, preload=True)
+    raw = read_raw_ctf(filepath, preload=True)
+    raw_data = raw.copy().apply_gradient_compensation(grade=3) #required for source reconstruction
     picks = mne.pick_types(raw_data.info, meg=True, eog=True, exclude='bads')
     fig = raw_data.plot(show=False);
     report.add_figs_to_section(fig, captions='Time series', section='Raw data')
-    closefig(fig)
+    close(fig)
     fig = raw_data.plot_psd(average=False, picks=picks, show=False);
     report.add_figs_to_section(fig, captions='PSD', section='Raw data')
-    closefig(fig)
+    close(fig)
 
     ## Filtering
     high_cutoff = 200
@@ -38,13 +41,13 @@ def saflow_preproc(filepath, savepath, reportpath):
     raw_data.notch_filter(np.arange(60, high_cutoff+1, 60), picks=picks, filter_length='auto',phase='zero', fir_design="firwin")
     fig = raw_data.plot_psd(average=False, picks=picks, fmax=120, show=False);
     report.add_figs_to_section(fig, captions='PSD', section='Filtered data')
-    closefig(fig)
+    close(fig)
 
     ## ICA
     ica = ICA(n_components=20, random_state=0).fit(raw_data, decim=3)
     fig = ica.plot_sources(raw_data, show=False);
     report.add_figs_to_section(fig, captions='Independent Components', section='ICA')
-    closefig(fig)
+    close(fig)
 
     ## FIND ECG COMPONENTS
     ecg_threshold = 0.50
@@ -52,13 +55,13 @@ def saflow_preproc(filepath, savepath, reportpath):
     ecg_inds, ecg_scores = ica.find_bads_ecg(ecg_epochs, ch_name='EEG059', method='ctps', threshold=ecg_threshold)
     fig = ica.plot_scores(ecg_scores, ecg_inds, show=False);
     report.add_figs_to_section(fig, captions='Correlation with ECG (EEG059)', section='ICA - ECG')
-    closefig(fig)
+    close(fig)
     fig = list()
     try:
         fig = ica.plot_properties(ecg_epochs, picks=ecg_inds, image_args={'sigma': 1.}, show=False);
         for i, figure in enumerate(fig):
             report.add_figs_to_section(figure, captions='Detected component ' + str(i), section='ICA - ECG')
-            closefig(figure)
+            close(figure)
     except:
         print('No component to remove')
 
@@ -68,13 +71,13 @@ def saflow_preproc(filepath, savepath, reportpath):
     eog_inds, eog_scores = ica.find_bads_eog(eog_epochs, ch_name='EEG057', threshold=eog_threshold)
     fig = ica.plot_scores(eog_scores, eog_inds, show=False);
     report.add_figs_to_section(fig, captions='Correlation with EOG (EEG057)', section='ICA - EOG')
-    closefig(fig)
+    close(fig)
     fig = list()
     try:
         fig = ica.plot_properties(eog_epochs, picks=eog_inds, image_args={'sigma': 1.}, show=False);
         for i, figure in enumerate(fig):
             report.add_figs_to_section(figure, captions='Detected component ' + str(i), section='ICA - EOG')
-            closefig(figure)
+            close(figure)
     except:
         print('No component to remove')
 
@@ -85,19 +88,16 @@ def saflow_preproc(filepath, savepath, reportpath):
     ica.apply(raw_data)
     fig = raw_data.plot(show=False); # Plot the clean signal.
     report.add_figs_to_section(fig, captions='After filtering + ICA', section='Raw data')
-    closefig(fig)
+    close(fig)
     ## SAVE PREPROCESSED FILE
-    report.save(reportpath, open_browser=False);
-    try:
-        raw_data.save(savepath, overwrite=False)
-    except:
-        print('File already exists')
+    report.save(reportpath, open_browser=False, overwrite=True);
+    raw_data.save(savepath, overwrite=False)
 
     return raw_data
 
 def segment_files(bids_filepath, tmin=0, tmax=0.8):
     raw = read_raw_fif(bids_filepath, preload=True)
-    picks = mne.pick_types(raw.info, meg=True, ref_meg=False, eeg=False, eog=False, stim=False)
+    picks = mne.pick_types(raw.info, meg=True, ref_meg=True, eeg=False, eog=False, stim=False)
     ### Set some constants for epoching
     baseline = None #(None, -0.05)
     #reject = {'mag': 4e-12}

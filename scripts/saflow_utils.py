@@ -124,7 +124,7 @@ def get_SAflow_bids(FOLDERPATH, subj, run, stage, cond=None):
         task = 'gradCPT'
 
     if stage == 'epo' or stage == 'raw' or stage == 'preproc_raw': # determine extension based on stage
-        extension = '.fif.gz'
+        extension = '.fif'
     elif stage == 'PSD':
         extension = '.mat'
     elif stage == 'sources':

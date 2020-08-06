@@ -108,7 +108,7 @@ def segment_files(bids_filepath, tmin=0, tmax=0.8):
     event_id = {'Freq': 21, 'Rare': 31}
     epochs = mne.Epochs(raw, events=events, event_id=event_id, tmin=tmin,
                     tmax=tmax, baseline=baseline, reject=None, picks=picks, preload=True)
-    ar = AutoReject(n_jobs=-1)
+    ar = AutoReject(n_jobs=6)
     epochs_clean, autoreject_log = ar.fit_transform(epochs, return_log=True)
     return epochs_clean, autoreject_log
 

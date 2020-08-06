@@ -55,7 +55,7 @@ datasource.inputs.template = '*%s/%s/meg/%s_%s_task-gradCPT_%s_meg_%s.fif'
 
 datasource.inputs.template_args = dict(
         raw_file=[['subject_id', 'session_id', 'subject_id', 'session_id', 'run_id', '-epo']],
-        trans_file=[['subject_id', 'session_id', 'subject_id', 'session_id', 'run_id', 'epotrans']])
+        trans_file=[['subject_id', 'session_id', 'subject_id', 'session_id', 'run_id', '-epotrans']])
 
 datasource.inputs.sort_filelist = True
 
@@ -64,7 +64,7 @@ from ephypype.pipelines import create_pipeline_source_reconstruction  # noqa
 event_id = {'Freq': 21, 'Rare': 31}
 inv_sol_workflow = create_pipeline_source_reconstruction(
     data_path, subjects_dir, spacing=spacing, inv_method=inv_method, parc=parc,
-    noise_cov_fname=noise_cov_fname, is_epoched=True, events_id={})
+    noise_cov_fname=noise_cov_fname, is_epoched=True, events_id={}, ROIs_mean=False, all_src_space=True)
 
 ###########
 

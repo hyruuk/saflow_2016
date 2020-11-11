@@ -9,7 +9,7 @@ from ephypype.datasets import fetch_omega_dataset
 
 #base_path = op.join(op.dirname(ephypype.__file__), '..', 'examples')
 #data_path = fetch_omega_dataset(base_path)
-data_path = op.join('/storage/Yann/saflow_DATA/saflow_bids')
+data_path = op.join('/scratch/hyruuk/saflow_data/saflow_bids')
 
 #### PARAMETERS
 import json  # noqa

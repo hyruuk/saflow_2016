@@ -5,6 +5,7 @@ import os.path as op
 import mne
 import scipy.io as sio
 import h5py
+from ephypype.import_data import write_hdf5
 
 fwd_template = FOLDERPATH + '/sub-{subj}/ses-recording/meg/sub-{subj}_ses-recording_task-gradCPT_run-0{bloc}_meg_-epo-oct-6-fwd.fif'
 sources_fp = '/storage/Yann/saflow_DATA/saflow_bids'
@@ -20,8 +21,6 @@ for subj in SUBJ_LIST:
     for bloc in BLOCS_LIST:
         #'sub-{}'.format(subj)
 
-        subj = '07'
-        bloc = '2'
 
 
         fwd_fpath = fwd_template.format(subj=subj, bloc=bloc)

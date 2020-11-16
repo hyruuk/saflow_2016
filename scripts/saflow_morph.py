@@ -8,7 +8,7 @@ import h5py
 from ephypype.import_data import write_hdf5
 
 fwd_template = FOLDERPATH + '/sub-{subj}/ses-recording/meg/sub-{subj}_ses-recording_task-gradCPT_run-0{bloc}_meg_-epo-oct-6-fwd.fif'
-sources_fp = '/storage/Yann/saflow_DATA/saflow_bids'
+sources_fp = FOLDERPATH
 sources_template = FOLDERPATH + 'source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/_run_id_run-0{bloc}_session_id_ses-recording_subject_id_sub-{subj}/inv_solution/sub-{subj}_ses-recording_task-gradCPT_run-0{bloc}_meg_-epo_stc.hdf5'
 morphed_template = FOLDERPATH + 'source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/_run_id_run-0{bloc}_session_id_ses-recording_subject_id_sub-{subj}/inv_solution/sub-{subj}_ses-recording_task-gradCPT_run-0{bloc}_meg_-epo_stcmorphed.hdf5'
 
@@ -19,10 +19,6 @@ vertices_to = [s['vertno'] for s in fsaverage_src]
 
 for subj in SUBJ_LIST:
     for bloc in BLOCS_LIST:
-        #'sub-{}'.format(subj)
-
-
-
         fwd_fpath = fwd_template.format(subj=subj, bloc=bloc)
         sources_fpath = sources_template.format(subj=subj, bloc=bloc)
         morphed_fpath = morphed_template.format(subj=subj, bloc=bloc)
@@ -33,7 +29,7 @@ for subj in SUBJ_LIST:
         n_cortex = (src[0]['nuse'] + src[1]['nuse'])
         try:
             morph_surf = mne.compute_source_morph(
-                src=surf_src, subject_from='SA{}'.format(subj), subject_to='fsaverage',
+                src=surf_src, subject_from='sub-{}'.format(subj), subject_to='fsaverage',
                 spacing=vertices_to, subjects_dir=FS_SUBJDIR)
         except ValueError:
             morph_surf = mne.compute_source_morph(

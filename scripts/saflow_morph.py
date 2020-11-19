@@ -32,9 +32,14 @@ for subj in SUBJ_LIST:
                 src=surf_src, subject_from='sub-{}'.format(subj), subject_to='fsaverage',
                 spacing=vertices_to, subjects_dir=FS_SUBJDIR)
         except ValueError:
-            morph_surf = mne.compute_source_morph(
-                src=surf_src, subject_from='fsaverage', subject_to='fsaverage',
-                spacing=vertices_to, subjects_dir=FS_SUBJDIR)
+            try:
+                morph_surf = mne.compute_source_morph(
+                    src=surf_src, subject_from='SA{}'.format(subj), subject_to='fsaverage',
+                    spacing=vertices_to, subjects_dir=FS_SUBJDIR)
+            except ValueError:
+                morph_surf = mne.compute_source_morph(
+                    src=surf_src, subject_from='fsaverage', subject_to='fsaverage',
+                    spacing=vertices_to, subjects_dir=FS_SUBJDIR)
 
         with h5py.File(sources_fpath, 'r') as f:
             a_group_key = list(f.keys())[0]

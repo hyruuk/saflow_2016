@@ -8,7 +8,7 @@ if __name__ == "__main__":
     for subj in SUBJ_LIST:
         for bloc in BLOCS_LIST:
             try:
-                sources_fp = '/storage/Yann/saflow_DATA/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
+                sources_fp = FOLDERPATH + 'source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
                 template_path = sources_fp + '_run_id_run-0{}_session_id_ses-recording_subject_id_sub-{}/inv_solution/sub-{}_ses-recording_task-gradCPT_run-0{}_meg_-epo_stc.hdf5'.format(bloc, subj, subj, bloc)
                 template_IN = sources_fp + '_run_id_run-0{}_session_id_ses-recording_subject_id_sub-{}/inv_solution/sub-{}_ses-recording_task-gradCPT_run-0{}_meg_IN_-epo_stc.hdf5'.format(bloc, subj, subj, bloc)
                 template_OUT = sources_fp + '_run_id_run-0{}_session_id_ses-recording_subject_id_sub-{}/inv_solution/sub-{}_ses-recording_task-gradCPT_run-0{}_meg_OUT_-epo_stc.hdf5'.format(bloc, subj, subj, bloc)

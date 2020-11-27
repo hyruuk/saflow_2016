@@ -28,7 +28,7 @@ import nipype.interfaces.io as nio
 ###############################################################################
 # Let us fetch the data first. It is around 675 MB download.
 
-data_path = op.join('/storage/Yann/saflow_DATA/saflow_bids')
+data_path = op.join('/scratch/hyruuk/saflow_data/saflow_bids')
 
 ###############################################################################
 # then read the parameters for experiment and connectivity from a
@@ -71,7 +71,7 @@ infosource = create_iterator(['subject_id', 'session_id', 'run_id', 'freq_band_n
 ###############################################################################
 # and a node to grab data. The template_args in this node iterate upon
 # the values in the infosource node
-sources_fp = '/storage/Yann/saflow_DATA/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
+sources_fp = '/scratch/hyruuk/saflow_data/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
 template_path = sources_fp + '*%s*%s*%s/inv_solution/%s_%s*%s*_stc.hdf5'
 template_args = [['run_id', 'session_id', 'subject_id', 'subject_id', 'session_id', 'run_id']]
 datasource = pe.Node(

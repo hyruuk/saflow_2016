@@ -71,15 +71,10 @@ infosource = create_iterator(['subject_id', 'session_id', 'run_id', 'cond_id', '
 ###############################################################################
 # and a node to grab data. The template_args in this node iterate upon
 # the values in the infosource node
-<<<<<<< HEAD
-sources_fp = '/storage/Yann/saflow_DATA/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
+sources_fp = '/scratch/hyruuk/saflow_data/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
 template_path = sources_fp + '_run_id_%s_session_id_%s_subject_id_%s/inv_solution/%s_%s_task-gradCPT_%s_meg_%s-epo_stc.hdf5'
 template_args = [['run_id', 'session_id', 'subject_id', 'subject_id', 'session_id', 'run_id', 'cond_id']]
-=======
-sources_fp = '/scratch/hyruuk/saflow_data/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
-template_path = sources_fp + '*%s*%s*%s/inv_solution/%s_%s*%s*_stc.hdf5'
-template_args = [['run_id', 'session_id', 'subject_id', 'subject_id', 'session_id', 'run_id']]
->>>>>>> 04d30f0cd016df63010df99b5eca1a015f63bf1b
+
 datasource = pe.Node(
     interface=nio.DataGrabber(infields=['subject_id', 'session_id', 'run_id', 'cond_id'], outfields=['ts_file']),
     name='datasource')

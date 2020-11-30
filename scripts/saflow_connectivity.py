@@ -43,6 +43,7 @@ pprint.pprint({'experiment parameters': params["general"]})
 subject_ids = params["general"]["subject_ids"]  # sub-003
 session_ids = params["general"]["session_ids"]  # ses-0001
 run_ids = params["general"]["run_ids"]  # ses-0001
+cond_ids = params["general"]["cond_ids"]
 NJOBS = params["general"]["NJOBS"]
 
 pprint.pprint({'connectivity parameters': params["connectivity"]})

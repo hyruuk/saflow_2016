@@ -2,10 +2,11 @@
     "general":
     {
         "NJOBS": 6,
-        "subject_ids": ["sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11", 
+        "subject_ids": ["sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11",
 "sub-12", "sub-13", "sub-14", "sub-15"],
         "session_ids": ["ses-recording"],
         "run_ids":["run-02","run-03","run-04","run-05","run-06","run-07"],
+        "cond_ids":["IN", "OUT"],
         "data_type": "hdf5",
         "subjects_dir": "saflow_anat"
     },

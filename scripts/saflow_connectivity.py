@@ -66,17 +66,18 @@ main_workflow.base_dir = data_path
 ###############################################################################
 # Then we create a node to pass input filenames to DataGrabber from nipype
 
-infosource = create_iterator(['subject_id', 'session_id', 'run_id', 'freq_band_name'],
-                             [subject_ids, session_ids, run_ids, freq_band_names])
+infosource = create_iterator(['subject_id', 'session_id', 'run_id', 'cond_id', 'freq_band_name'],
+                             [subject_ids, session_ids, run_ids, cond_ids, freq_band_names])
 
 ###############################################################################
 # and a node to grab data. The template_args in this node iterate upon
 # the values in the infosource node
 sources_fp = '/scratch/hyruuk/saflow_data/saflow_bids/source_reconstruction_MNE_aparca2009s/inv_sol_pipeline/'
-template_path = sources_fp + '*%s*%s*%s/inv_solution/%s_%s*%s*_stc.hdf5'
-template_args = [['run_id', 'session_id', 'subject_id', 'subject_id', 'session_id', 'run_id']]
+template_path = sources_fp + '_run_id_%s_session_id_%s_subject_id_%s/inv_solution/%s_%s_task-gradCPT_%s_meg_%s-epo_stc.hdf5'
+template_args = [['run_id', 'session_id', 'subject_id', 'subject_id', 'session_id', 'run_id', 'cond_id']]
+
 datasource = pe.Node(
-    interface=nio.DataGrabber(infields=['subject_id', 'session_id', 'run_id'], outfields=['ts_file']),
+    interface=nio.DataGrabber(infields=['subject_id', 'session_id', 'run_id', 'cond_id'], outfields=['ts_file']),
     name='datasource')
 
 datasource.inputs.base_directory = data_path
@@ -127,6 +128,7 @@ frequency_node = get_frequency_band(freq_band_names, freq_bands)
 main_workflow.connect(infosource, 'subject_id', datasource, 'subject_id')
 main_workflow.connect(infosource, 'session_id', datasource, 'session_id')
 main_workflow.connect(infosource, 'run_id', datasource, 'run_id')
+main_workflow.connect(infosource, 'cond_id', datasource, 'cond_id')
 main_workflow.connect(infosource, 'freq_band_name',
                       frequency_node, 'freq_band_name')
 
@@ -161,64 +163,3 @@ main_workflow.config['execution'] = {'remove_unnecessary_outputs': 'false'}
 
 # Run workflow locally on 1 CPU
 main_workflow.run(plugin='MultiProc', plugin_args={'n_procs': NJOBS})
-
-###############################################################################
-# The output is the **spectral connectivty matrix in .npy format** stored
-# in the workflow directory defined by `base_dir`.
-# We can use the pipelines defined in |graphpype| package
-# to perform graph analysis on the computed connectivity matrix.
-#
-# .. |graphpype| raw:: html
-#
-#   <a href="https://github.com/neuropycon/graphpype" target="_blank">graphpype</a>
-
-##############################################################################
-from ephypype.gather import get_results  # noqa
-from ephypype.gather import get_channel_files  # noqa
-from ephypype.aux_tools import _parse_string  # noqa
-from visbrain.objects import ConnectObj, SourceObj, SceneObj, ColorbarObj  # noqa
-
-thresh = .75
-with_text = False
-
-channel_coo_files, channel_name_files = get_channel_files(
-        main_workflow.base_dir, main_workflow.name)
-
-connectivity_matrices, _ = get_results(
-        main_workflow.base_dir, main_workflow.name, pipeline='connectivity')
-
-sc = SceneObj(size=(1000, 1000), bgcolor=(.1, .1, .1))
-for nf, (connect_file, channel_coo_file, channel_name_file) in \
-        enumerate(zip(connectivity_matrices, channel_coo_files,
-                      channel_name_files)):
-
-    # Load files :
-    xyz = np.genfromtxt(channel_coo_file, dtype=float)
-    names = np.genfromtxt(channel_name_file, dtype=str)
-    connect = np.load(connect_file)
-    connect += connect.T
-    connect = np.ma.masked_array(connect, mask=connect < thresh)
-    names = names if with_text else None
-    radius = connect.sum(1)
-    clim = (thresh, connect.max())
-
-    # With text :
-    c_obj = ConnectObj('c', xyz, connect,
-                       color_by='count',
-                       clim=clim, dynamic=(0., 1.),
-                       dynamic_order=3, antialias=True, cmap='inferno',
-                       line_width=4.)
-    s_obj = SourceObj('s', xyz, data=radius, radius_min=5, radius_max=15,
-                      text=names, text_size=10, text_color='white',
-                      text_translate=(0., 0., 0.))
-    s_obj.color_sources(data=radius, cmap='inferno')
-    cbar = ColorbarObj(c_obj, txtcolor='white', txtsz=15,
-                       cblabel='Connectivity', cbtxtsz=20)
-    band = _parse_string(connect_file, freq_band_names)
-    title = 'Connectivity on {} band'.format(band)
-    sc.add_to_subplot(c_obj, title=title, title_size=14, title_bold=True,
-                      title_color='white', row=nf)
-    sc.add_to_subplot(s_obj, rotate='top', zoom=.5, use_this_cam=True, row=nf)
-    sc.add_to_subplot(cbar, col=1, width_max=200, row=nf)
-
-sc.preview()

@@ -1,9 +1,8 @@
 {
     "general":
     {
-        "NJOBS": 6,
-        "subject_ids": ["sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11",
-"sub-12", "sub-13", "sub-14", "sub-15"],
+        "NJOBS": 12,
+        "subject_ids": ["sub-04"],
         "session_ids": ["ses-recording"],
         "run_ids":["run-02","run-03","run-04","run-05","run-06","run-07"],
         "cond_ids":["IN", "OUT"],
@@ -25,8 +24,8 @@
     },
     "connectivity":
     {
-        "freq_band_names": ["alpha", "beta"],
-        "freq_bands": [[8, 12], [13, 29]],
+        "freq_band_names": ["theta", "alpha", "beta", "gamma"],
+        "freq_bands": [[3, 7], [8, 12], [13, 29], [30, 60]],
         "method": "wpli",
         "epoch_window_length": 0.8
     },

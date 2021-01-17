@@ -4,9 +4,9 @@ do
 #SBATCH --account=def-kjerbi
 #SBATCH --mem=512G
 #SBATCH --time=12:00:00
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 #SBATCH --job-name=s$subid_saflow_con
-#SBATCH --ntasks-per-node=12
+#SBATCH --ntasks-per-node=24
 
 # Load the module:
 

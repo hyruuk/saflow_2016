@@ -22,7 +22,7 @@ for subj in SUBJ_LIST:
     if subj in ['06', '09']:
         sbj = 'sub-' + subj
     if subj == '07':
-        sbh = 'SA07'
+        sbj = 'SA07'
     else:
         sbj = 'fsaverage'
 

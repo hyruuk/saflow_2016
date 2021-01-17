@@ -1,10 +1,11 @@
 #!/bin/bash
-
+for subid in 04 05 06 07 08 09 10 11 12 13 14
+do
 #SBATCH --account=def-kjerbi
 #SBATCH --mem=512G
 #SBATCH --time=12:00:00
 #SBATCH --nodes=1
-#SBATCH --job-name=s04_saflow_con
+#SBATCH --job-name=s$subid_saflow_con
 #SBATCH --ntasks-per-node=12
 
 # Load the module:
@@ -19,6 +20,7 @@ source $EBROOTFREESURFER/FreeSurferEnv.sh
 
 echo "Starting run at: `date`"
 
-$HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py
+$HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py $subid
 
 echo "Program finished with exit code $? at: `date`"
+done

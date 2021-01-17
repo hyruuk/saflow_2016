@@ -24,6 +24,7 @@ from ephypype.nodes import create_iterator, create_datagrabber
 from ephypype.nodes import get_frequency_band
 from ephypype.datasets import fetch_omega_dataset
 import nipype.interfaces.io as nio
+import sys
 
 ###############################################################################
 # Let us fetch the data first. It is around 675 MB download.
@@ -40,7 +41,8 @@ import pprint  # noqa
 params = json.load(open("params.json"))
 
 pprint.pprint({'experiment parameters': params["general"]})
-subject_ids = params["general"]["subject_ids"]  # sub-003
+#subject_ids = params["general"]["subject_ids"]  # sub-003
+subject_ids = sys.argv[1:]
 session_ids = params["general"]["session_ids"]  # ses-0001
 run_ids = params["general"]["run_ids"]  # ses-0001
 cond_ids = params["general"]["cond_ids"]

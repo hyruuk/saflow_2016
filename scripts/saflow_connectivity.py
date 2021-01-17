@@ -43,6 +43,7 @@ params = json.load(open("params.json"))
 pprint.pprint({'experiment parameters': params["general"]})
 #subject_ids = params["general"]["subject_ids"]  # sub-003
 subject_ids = sys.argv[1:]
+subject_ids = ['sub-' + str(subject_ids[0])]
 session_ids = params["general"]["session_ids"]  # ses-0001
 run_ids = params["general"]["run_ids"]  # ses-0001
 cond_ids = params["general"]["cond_ids"]

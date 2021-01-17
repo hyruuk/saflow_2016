@@ -1,7 +1,7 @@
 {
     "general":
     {
-        "NJOBS": 12,
+        "NJOBS": 48,
         "subject_ids": ["sub-04"],
         "session_ids": ["ses-recording"],
         "run_ids":["run-02","run-03","run-04","run-05","run-06","run-07"],

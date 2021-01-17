@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --account=def-kjerbi
+#SBATCH --time=12:00:00
 
 
 # Load the module:

@@ -5,18 +5,12 @@ from saflow_params import FOLDERPATH, SUBJECTS_DIR, SUBJ_LIST, BLOCS_LIST
 
 
 folderpath = FOLDERPATH
-conmat_fname = 'conmat_0_wpli.npy'
-fwd_fname = 'sub-04_ses-recording_task-gradCPT_run-02_meg_-epo-oct-6-fwd.fif'
 parc = 'aparc.a2009s'
 sbj_dir = SUBJECTS_DIR
 
-freq_bands = ['alpha', 'beta']
+freq_bands = ['theta', 'alpha', 'beta', 'gamma']
 
 
-conmat = np.load(folderpath + conmat_fname)
-fwd = mne.read_forward_solution(folderpath + fwd_fname)
-
-sbj = 'fsaverage'
 
 for subj in SUBJ_LIST:
     if subj in ['06', '09']:

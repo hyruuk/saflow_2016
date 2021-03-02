@@ -14,7 +14,7 @@ export SUBJECTS_DIR=/projects/def-kjerbi/hyruuk/saflow/saflow_anat
 source $EBROOTFREESURFER/FreeSurferEnv.sh
 
 
-for i in 04 05 06 07 08 09 10 11 12 13 14; do
+for i in 04 05 06 07 08 09 10 11 12 13 14 15; do
   srun \
     -N1 \
     --mem=512G \

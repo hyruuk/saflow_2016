@@ -15,15 +15,16 @@ source $EBROOTFREESURFER/FreeSurferEnv.sh
 
 
 for i in 04 05 06 07 08 09 10 11 12 13 14 15; do
-  srun \
-    -N1 \
-    --mem=512G \
-    --ntasks-per-node=24 \
-    --nodes=2 \
-    --time=12:00:00 \
-    --job-name=saflow_con \
-echo "Starting run at: `date`"
-$HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py $i
+  for j in IN OUT; do
+    srun \
+      -N1 \
+      --mem=512G \
+      --ntasks-per-node=24 \
+      --nodes=2 \
+      --time=12:00:00 \
+      --job-name=saflow_con \
+  echo "Starting run at: `date`"
+  $HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py $i $j
 
 echo "Program finished with exit code $? at: `date`"
 done

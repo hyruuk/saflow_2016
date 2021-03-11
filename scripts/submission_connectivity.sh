@@ -20,7 +20,7 @@ for i in 04 05 06 07 08 09 10 11 12 13 14 15; do
       -N1 \
       --mem=512G \
       --ntasks-per-node=24 \
-      --nodes=2 \
+      --nodes=1 \
       --time=12:00:00 \
       --job-name=saflow_con \
   echo "Starting run at: `date`"

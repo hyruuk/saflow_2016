@@ -47,7 +47,7 @@ subject_ids = ['sub-' + str(subject_ids[0])]
 session_ids = params["general"]["session_ids"]  # ses-0001
 run_ids = params["general"]["run_ids"]  # ses-0001
 cond_ids = params["general"]["cond_ids"]
-cond_ids = sys.argv[2]
+cond_ids = [str(sys.argv[2])]
 NJOBS = params["general"]["NJOBS"]
 
 pprint.pprint({'connectivity parameters': params["connectivity"]})

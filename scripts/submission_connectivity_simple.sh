@@ -3,7 +3,7 @@
 #SBATCH --mem=512G
 #SBATCH --time=12:00:00
 #SBATCH --nodes=2
-#SBATCH --job-name=s05_saflow_con
+#SBATCH --job-name=$1_saflow_con
 #SBATCH --ntasks-per-node=24
 
 # Load the module:
@@ -18,6 +18,6 @@ source $EBROOTFREESURFER/FreeSurferEnv.sh
 
 echo "Starting run at: `date`"
 
-$HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py 05
+$HOME/neuropycon/bin/python $HOME/projects/def-kjerbi/hyruuk/saflow/scripts/saflow_connectivity.py $1 $2
 
 echo "Program finished with exit code $? at: `date`"

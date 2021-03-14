@@ -2,7 +2,7 @@
 #SBATCH --account=def-kjerbi
 #SBATCH --mem=512G
 #SBATCH --time=12:00:00
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --job-name=$1_saflow_con
 #SBATCH --ntasks-per-node=24
 

@@ -3,7 +3,6 @@ import numpy as np
 from utils import get_SAflow_bids
 from neuro import compute_PSD
 from saflow_params import FOLDERPATH, IMG_DIR, FREQS, SUBJ_LIST, BLOCS_LIST
-from brainpipe import feature
 from scipy.io import savemat
 
 ### OPEN SEGMENTED FILES AND COMPUTE PSDS
